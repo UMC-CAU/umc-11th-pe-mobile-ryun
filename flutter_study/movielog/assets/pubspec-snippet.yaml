@@ -1,0 +1,11 @@
+flutter:
+  assets:
+    - assets/images/profile/
+    - assets/images/posters/
+    - assets/logos/
+    - assets/icons/
+
+  fonts:
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope-VariableFont_wght.ttf

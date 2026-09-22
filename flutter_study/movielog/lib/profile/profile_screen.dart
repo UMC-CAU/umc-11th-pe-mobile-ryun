@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../common/common_app_bar.dart';
 import '../theme/app_colors.dart';
@@ -94,7 +95,7 @@ class ProfileHeader extends StatelessWidget {
       children: [
         ProfileAvatar(
           scale: scale,
-          imagePath: 'assets/images/profile.jpg',
+          imagePath: 'assets/images/profile/profile_movielog.jpg',
         ),
         SizedBox(height: 24 * scale),
         ProfileText(scale: scale),
@@ -108,7 +109,6 @@ class ProfileAvatar extends StatelessWidget {
 
   final double scale;
 
-  // TODO: 공통 ZIP 수령 후 실제 파일 경로를 전달합니다.
   final String? imagePath;
 
   @override
@@ -162,14 +162,27 @@ class ProfileText extends StatelessWidget {
           SizedBox(
             height: 28 * scale,
             child: Center(
-              child: Text(
-                '무비러버',
-                style: TextStyle(
-                  fontSize: 22 * scale,
-                  fontWeight: FontWeight.w500,
-                  height: 28 / 22,
-                  color: AppColors.black,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    '무비러버',
+                    style: TextStyle(
+                      fontSize: 22 * scale,
+                      fontWeight: FontWeight.w500,
+                      height: 28 / 22,
+                      color: AppColors.black,
+                    ),
+                  ),
+                  SizedBox(width: 4 * scale),
+                  SvgPicture.asset(
+                    'assets/icons/check_circle.svg',
+                    width: 20 * scale,
+                    height: 20 * scale,
+                    semanticsLabel: '인증된 사용자',
+                  ),
+                ],
               ),
             ),
           ),
@@ -178,7 +191,7 @@ class ProfileText extends StatelessWidget {
             height: 48 * scale,
             child: Center(
               child: Text(
-                '매주 주말엔 영화관으로 출근하는 프로 관람객. 좋은 영화를 보고 기록하는 것을 좋아합니다.',
+                '매주 주말엔 영화관으로 출근하는 프로 관람객. 좋아하는 영화를 기록하고 있어요.',
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,

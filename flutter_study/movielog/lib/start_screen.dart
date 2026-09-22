@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class StartScreen extends StatelessWidget {
   const StartScreen({super.key});
@@ -95,11 +96,11 @@ class _IntroContent extends StatelessWidget {
               child: Padding(
                 padding: EdgeInsets.only(bottom: 32 * scale),
                 child: Center(
-                  child: Icon(
-                    Icons.movie_outlined,
-                    color: _purple,
-                    size: 60 * scale,
-                    semanticLabel: 'MovieLog 영화 아이콘',
+                  child: SvgPicture.asset(
+                    'assets/logos/movielog_logo.svg',
+                    width: 72 * scale,
+                    height: 72 * scale,
+                    semanticsLabel: 'MovieLog 영화 아이콘',
                   ),
                 ),
               ),

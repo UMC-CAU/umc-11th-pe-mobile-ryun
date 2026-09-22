@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'start_screen.dart';
 import 'profile/profile_screen.dart';
 import 'theme/app_theme.dart';
 
@@ -13,6 +13,7 @@ class MovieLogApp extends StatelessWidget {
       title: 'MovieLog',
       theme: AppTheme.light,
       home: const ProfileScreen(),
+      // home: const StartScreen(),
     );
   }
 }
