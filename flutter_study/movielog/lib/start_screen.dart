@@ -54,7 +54,6 @@ class _IntroContent extends StatelessWidget {
 
   final double scale;
 
-  static const _purple = Color(0xFF4F378A);
   static const _text = Color(0xFF1B1C1A);
   static const _subtext = Color(0xFF494551);
 
