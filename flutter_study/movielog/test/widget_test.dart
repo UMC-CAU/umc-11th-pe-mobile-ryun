@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:movielog/auth/sign_up_screen.dart';
+import 'package:go_router/go_router.dart';
+import 'package:movielog/register_screen.dart';
 import 'package:movielog/common/movie_log_text_form_field.dart';
 
 void main() {
   Widget buildSubject() {
-    return const MaterialApp(home: SignUpScreen());
+    return const MaterialApp(home: RegisterScreen());
   }
 
   testWidgets('회원가입 화면의 필수 입력 요소를 표시한다', (tester) async {
@@ -16,7 +17,7 @@ void main() {
     expect(find.byKey(const Key('emailField')), findsOneWidget);
     expect(find.byKey(const Key('passwordField')), findsOneWidget);
     expect(find.byKey(const Key('termsCheckbox')), findsOneWidget);
-    expect(find.byKey(const Key('signUpButton')), findsOneWidget);
+    expect(find.byKey(const Key('registerButton')), findsOneWidget);
     expect(find.byType(MovieLogTextFormField), findsNWidgets(3));
   });
 
@@ -77,7 +78,7 @@ void main() {
     await tester.pumpWidget(buildSubject());
 
     ElevatedButton button = tester.widget(
-      find.byKey(const Key('signUpButton')),
+      find.byKey(const Key('registerButton')),
     );
     expect(button.onPressed, isNull);
 
@@ -94,7 +95,7 @@ void main() {
     await tester.tap(find.byKey(const Key('termsCheckbox')));
     await tester.pump();
 
-    button = tester.widget(find.byKey(const Key('signUpButton')));
+    button = tester.widget(find.byKey(const Key('registerButton')));
     expect(button.onPressed, isNotNull);
   });
 
@@ -111,7 +112,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('signUpButton')), findsOneWidget);
+    expect(find.byKey(const Key('registerButton')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -144,8 +145,23 @@ void main() {
     expect(editableText.focusNode.hasFocus, isFalse);
   });
 
-  testWidgets('Form 제출 시 전체 입력값을 다시 검증한다', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: SignUpScreen()));
+  testWidgets('Form 제출 성공 시 홈 화면으로 교체한다', (tester) async {
+    final router = GoRouter(
+      initialLocation: '/register',
+      routes: [
+        GoRoute(
+          path: '/register',
+          builder: (context, state) => const RegisterScreen(),
+        ),
+        GoRoute(
+          path: '/home',
+          builder: (context, state) => const Scaffold(body: Text('홈 테스트 화면')),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
 
     await tester.enterText(find.byKey(const Key('nicknameField')), '무비러버');
     await tester.enterText(
@@ -159,10 +175,11 @@ void main() {
     await tester.ensureVisible(find.byKey(const Key('termsCheckbox')));
     await tester.tap(find.byKey(const Key('termsCheckbox')));
     await tester.pump();
-    await tester.ensureVisible(find.byKey(const Key('signUpButton')));
-    await tester.tap(find.byKey(const Key('signUpButton')));
-    await tester.pump();
+    await tester.ensureVisible(find.byKey(const Key('registerButton')));
+    await tester.tap(find.byKey(const Key('registerButton')));
+    await tester.pumpAndSettle();
 
-    expect(find.text('가입 정보가 확인되었습니다.'), findsOneWidget);
+    expect(find.text('홈 테스트 화면'), findsOneWidget);
+    expect(find.byType(RegisterScreen), findsNothing);
   });
 }

@@ -22,9 +22,11 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return AppBar(
+      automaticallyImplyLeading: false,
       title: Text(
         title,
-        style: titleStyle ??
+        style:
+            titleStyle ??
             textTheme.headlineSmall?.copyWith(
               fontSize: 22,
               fontWeight: FontWeight.w500,
@@ -35,10 +37,7 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
       centerTitle: centerTitle,
       leading: onBack == null
           ? null
-          : IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: onBack,
-            ),
+          : IconButton(icon: const Icon(Icons.arrow_back), onPressed: onBack),
       actions: actions,
     );
   }

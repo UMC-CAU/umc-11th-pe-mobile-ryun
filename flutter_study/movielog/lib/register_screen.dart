@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-import '../common/common_app_bar.dart';
-import '../common/movie_log_text_form_field.dart';
-import '../theme/app_colors.dart';
+import 'common/common_app_bar.dart';
+import 'common/movie_log_text_form_field.dart';
+import 'theme/app_colors.dart';
 
-class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<SignUpScreen> createState() => _SignUpScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _SignUpScreenState extends State<SignUpScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final _nicknameController = TextEditingController();
@@ -50,116 +51,108 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (!isValid || !_agreedToTerms) return;
 
     FocusScope.of(context).unfocus();
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('가입 정보가 확인되었습니다.')));
+    context.pushReplacement('/home');
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: CommonAppBar(
-        title: '회원가입',
-        centerTitle: true,
-        onBack: () => Navigator.of(context).maybePop(),
-      ),
-      body: GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-        child: SafeArea(
-          top: false,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final isWideScreen = constraints.maxWidth >= 700;
-              final horizontalPadding = isWideScreen ? 48.0 : 16.0;
-              final verticalPadding = isWideScreen ? 64.0 : 24.0;
-              final minimumContentHeight =
-                  constraints.maxHeight - (verticalPadding * 2);
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        appBar: const CommonAppBar(title: '회원가입', centerTitle: true),
+        body: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+          child: SafeArea(
+            top: false,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isWideScreen = constraints.maxWidth >= 700;
+                final horizontalPadding = isWideScreen ? 48.0 : 16.0;
+                final verticalPadding = isWideScreen ? 64.0 : 24.0;
+                final minimumContentHeight =
+                    constraints.maxHeight - (verticalPadding * 2);
 
-              return SingleChildScrollView(
-                keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.manual,
-                padding: EdgeInsets.fromLTRB(
-                  horizontalPadding,
-                  verticalPadding,
-                  horizontalPadding,
-                  isWideScreen ? verticalPadding : 32,
-                ),
-                child: Align(
-                  alignment: isWideScreen
-                      ? Alignment.topCenter
-                      : Alignment.topLeft,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: isWideScreen ? 560 : constraints.maxWidth,
-                      minHeight: minimumContentHeight > 0
-                          ? minimumContentHeight
-                          : 0,
-                    ),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        mainAxisAlignment: isWideScreen
-                            ? MainAxisAlignment.center
-                            : MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              const SignUpHeader(),
-                              const SizedBox(height: 48),
-                              SignUpFields(
-                                nicknameController: _nicknameController,
-                                emailController: _emailController,
-                                passwordController: _passwordController,
-                                emailFocusNode: _emailFocusNode,
-                                passwordFocusNode: _passwordFocusNode,
-                                nicknameError: _nicknameError,
-                                emailError: _emailError,
-                                passwordError: _passwordError,
-                                nicknameShowsValidation:
-                                    _nicknameTouched || _submitted,
-                                emailShowsValidation:
-                                    _emailTouched || _submitted,
-                                passwordShowsValidation:
-                                    _passwordTouched || _submitted,
-                                onNicknameChanged: (_) {
-                                  setState(() => _nicknameTouched = true);
-                                },
-                                onEmailChanged: (_) {
-                                  setState(() => _emailTouched = true);
-                                },
-                                onPasswordChanged: (_) {
-                                  setState(() => _passwordTouched = true);
-                                },
-                              ),
-                            ],
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(top: 72),
-                            child: TermsAndSubmitSection(
-                              agreedToTerms: _agreedToTerms,
-                              canSubmit: _canSubmit,
-                              onAgreementChanged: (value) {
-                                setState(() => _agreedToTerms = value);
-                              },
-                              onSubmit: _submit,
-                              onLogin: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('로그인 화면은 다음 단계에서 연결합니다.'),
-                                  ),
-                                );
-                              },
+                return SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.manual,
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    verticalPadding,
+                    horizontalPadding,
+                    isWideScreen ? verticalPadding : 32,
+                  ),
+                  child: Align(
+                    alignment: isWideScreen
+                        ? Alignment.topCenter
+                        : Alignment.topLeft,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: isWideScreen ? 560 : constraints.maxWidth,
+                        minHeight: minimumContentHeight > 0
+                            ? minimumContentHeight
+                            : 0,
+                      ),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          mainAxisAlignment: isWideScreen
+                              ? MainAxisAlignment.center
+                              : MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                const RegisterHeader(),
+                                const SizedBox(height: 48),
+                                RegisterFields(
+                                  nicknameController: _nicknameController,
+                                  emailController: _emailController,
+                                  passwordController: _passwordController,
+                                  emailFocusNode: _emailFocusNode,
+                                  passwordFocusNode: _passwordFocusNode,
+                                  nicknameError: _nicknameError,
+                                  emailError: _emailError,
+                                  passwordError: _passwordError,
+                                  nicknameShowsValidation:
+                                      _nicknameTouched || _submitted,
+                                  emailShowsValidation:
+                                      _emailTouched || _submitted,
+                                  passwordShowsValidation:
+                                      _passwordTouched || _submitted,
+                                  onNicknameChanged: (_) {
+                                    setState(() => _nicknameTouched = true);
+                                  },
+                                  onEmailChanged: (_) {
+                                    setState(() => _emailTouched = true);
+                                  },
+                                  onPasswordChanged: (_) {
+                                    setState(() => _passwordTouched = true);
+                                  },
+                                ),
+                              ],
                             ),
-                          ),
-                        ],
+                            Padding(
+                              padding: const EdgeInsets.only(top: 72),
+                              child: TermsAndSubmitSection(
+                                agreedToTerms: _agreedToTerms,
+                                canSubmit: _canSubmit,
+                                onAgreementChanged: (value) {
+                                  setState(() => _agreedToTerms = value);
+                                },
+                                onSubmit: _submit,
+                                onLogin: () => context.go('/home'),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -167,8 +160,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 }
 
-class SignUpHeader extends StatelessWidget {
-  const SignUpHeader({super.key});
+class RegisterHeader extends StatelessWidget {
+  const RegisterHeader({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -200,8 +193,8 @@ class SignUpHeader extends StatelessWidget {
   }
 }
 
-class SignUpFields extends StatelessWidget {
-  const SignUpFields({
+class RegisterFields extends StatelessWidget {
+  const RegisterFields({
     super.key,
     required this.nicknameController,
     required this.emailController,
@@ -336,7 +329,7 @@ class TermsAndSubmitSection extends StatelessWidget {
         SizedBox(
           height: 56,
           child: ElevatedButton(
-            key: const Key('signUpButton'),
+            key: const Key('registerButton'),
             onPressed: canSubmit ? onSubmit : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,

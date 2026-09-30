@@ -28,9 +28,12 @@ class ProfileScreen extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 896),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final scale = math.min(constraints.maxWidth / 390, 1.0);
+                final widthScale = constraints.maxWidth / 390;
+                final heightScale = constraints.maxHeight / 580;
+                final scale = math.min(math.min(widthScale, heightScale), 1.0);
 
-                return SingleChildScrollView(
+                return Align(
+                  alignment: Alignment.topCenter,
                   child: ProfileBody(
                     scale: scale,
                     stats: _stats,
@@ -60,25 +63,23 @@ class ProfileBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 780 * scale,
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: 16 * scale,
-          vertical: 24 * scale,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ProfileHeader(scale: scale),
-            SizedBox(height: 32 * scale),
-            EditProfileButton(scale: scale),
-            SizedBox(height: 32 * scale),
-            ProfileStats(scale: scale, stats: stats),
-            SizedBox(height: 32 * scale),
-            FavoriteGenres(scale: scale, genres: genres),
-          ],
-        ),
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: 16 * scale,
+        vertical: 24 * scale,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ProfileHeader(scale: scale),
+          SizedBox(height: 32 * scale),
+          EditProfileButton(scale: scale),
+          SizedBox(height: 32 * scale),
+          ProfileStats(scale: scale, stats: stats),
+          SizedBox(height: 32 * scale),
+          FavoriteGenres(scale: scale, genres: genres),
+        ],
       ),
     );
   }
@@ -227,7 +228,10 @@ class EditProfileButton extends StatelessWidget {
             backgroundColor: Colors.transparent,
             foregroundColor: AppColors.primary,
             elevation: 0,
-            padding: EdgeInsets.symmetric(horizontal: 24 * scale, vertical: 8 * scale),
+            padding: EdgeInsets.symmetric(
+              horizontal: 24 * scale,
+              vertical: 8 * scale,
+            ),
             side: const BorderSide(color: AppColors.primary),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8 * scale),
@@ -381,7 +385,10 @@ class GenreChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 32 * scale,
-      padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 8 * scale),
+      padding: EdgeInsets.symmetric(
+        horizontal: 16 * scale,
+        vertical: 8 * scale,
+      ),
       decoration: BoxDecoration(
         color: AppColors.primaryContainer,
         borderRadius: BorderRadius.circular(9999),

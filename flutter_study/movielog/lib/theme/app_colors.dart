@@ -7,6 +7,7 @@ abstract final class AppColors {
   static const outline = Color(0xFFE6DCF8);
   static const statSurface = Color(0xFFF5F3F0);
   static const bodyText = Color(0xFF49454F);
+  static const iconGray = Color(0xFF494551);
 
   static const violet = Color(0xFF4F378A);
   static const lightViolet = Color(0xFFD0BCFF);

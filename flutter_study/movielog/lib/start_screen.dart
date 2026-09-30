@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 
 class StartScreen extends StatelessWidget {
   const StartScreen({super.key});
@@ -176,7 +177,7 @@ class _StartButton extends StatelessWidget {
         padding: EdgeInsets.fromLTRB(16 * scale, 0, 16 * scale, 24 * scale),
         child: ElevatedButton(
           onPressed: () {
-            debugPrint('시작하기 버튼을 눌렀습니다.');
+            context.go('/register');
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: _purple,
