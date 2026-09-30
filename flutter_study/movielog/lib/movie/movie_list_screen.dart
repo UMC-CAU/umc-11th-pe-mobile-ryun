@@ -125,7 +125,7 @@ class _GenreFilterSheetState extends State<GenreFilterSheet> {
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
       expand: false,
-      initialChildSize: 0.5,
+      initialChildSize: 0.6,
       minChildSize: 0.3,
       maxChildSize: 0.9,
       builder: (context, scrollController) {
@@ -160,18 +160,22 @@ class _GenreFilterSheetState extends State<GenreFilterSheet> {
               ),
             ),
             Expanded(
-              child: ListView.builder(
+              child: Scrollbar(
                 controller: scrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                itemCount: widget.genres.length,
-                itemBuilder: (context, index) {
-                  final genre = widget.genres[index];
-                  return CheckboxListTile(
-                    value: _draftGenres.contains(genre),
-                    title: Text(genre),
-                    onChanged: (value) => _toggleGenre(genre, value ?? false),
-                  );
-                },
+                thumbVisibility: true,
+                child: ListView.builder(
+                  controller: scrollController,
+                  padding: const EdgeInsets.only(left: 8, right: 20),
+                  itemCount: widget.genres.length,
+                  itemBuilder: (context, index) {
+                    final genre = widget.genres[index];
+                    return CheckboxListTile(
+                      value: _draftGenres.contains(genre),
+                      title: Text(genre),
+                      onChanged: (value) => _toggleGenre(genre, value ?? false),
+                    );
+                  },
+                ),
               ),
             ),
             SafeArea(
@@ -182,6 +186,11 @@ class _GenreFilterSheetState extends State<GenreFilterSheet> {
                 child: ElevatedButton(
                   key: const Key('applyGenreFilterButton'),
                   onPressed: _applyFilter,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.white,
+                    minimumSize: const Size.fromHeight(56),
+                  ),
                   child: const Text('확인'),
                 ),
               ),
