@@ -1,0 +1,375 @@
+{
+  "info": {
+    "name": "4주차 도서 ORM 미션",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "MySQL UNIQUE 적용 후 번호 순서로 실행하세요. 정상 POST는 실제 도서를 저장합니다."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "categoryId",
+      "value": "1"
+    },
+    {
+      "key": "missingCategoryId",
+      "value": "999999"
+    },
+    {
+      "key": "bookTitle",
+      "value": "02 요청을 먼저 실행하세요"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 전체 목록과 카테고리 DTO",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/books",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "books"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"DTO fields and descending IDs\", () => { const books = pm.response.json(); books.forEach(b => pm.expect(b).to.have.all.keys(\"bookId\", \"title\", \"description\", \"categoryName\", \"isAvailable\")); for (let i = 1; i < books.length; i++) pm.expect(books[i-1].bookId).to.be.above(books[i].bookId); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 신규 등록 (실제 DB에 저장)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/books",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "books"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"categoryId\": {{categoryId}},\n  \"title\": \"{{bookTitle}}\",\n  \"description\": \"4주차 필수 및 심화 실습\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set(\"bookTitle\", \"스프링 ORM 실습 \" + pm.variables.replaceIn(\"{{$guid}}\"));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "pm.test(\"Created DTO\", () => { const b = pm.response.json(); pm.expect(b.title).to.eql(pm.collectionVariables.get(\"bookTitle\")); pm.expect(b.isAvailable).to.eql(true); pm.expect(b.bookId).to.be.a(\"number\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 등록한 도서 제목 검색",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/books?keyword={{bookTitle}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "books"
+          ],
+          "query": [
+            {
+              "key": "keyword",
+              "value": "{{bookTitle}}"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Find created book\", () => { const books = pm.response.json(); pm.expect(books.length).to.be.above(0); books.forEach(b => pm.expect(b.title).to.include(pm.collectionVariables.get(\"bookTitle\"))); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 검색 결과 없음",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/books?keyword=없는제목_{{$guid}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "books"
+          ],
+          "query": [
+            {
+              "key": "keyword",
+              "value": "없는제목_{{$guid}}"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Empty list\", () => pm.expect(pm.response.json()).to.eql([]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 공백 검색어는 전체 목록",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/books?keyword=%20%20",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "books"
+          ],
+          "query": [
+            {
+              "key": "keyword",
+              "value": "%20%20"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 빈 제목 검증",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/books",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "books"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"categoryId\": {{categoryId}},\n  \"title\": \"\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+              "pm.test(\"Title error\", () => pm.expect(pm.response.json().errors.map(e => e.field)).to.include(\"title\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 카테고리 ID 누락",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/books",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "books"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"카테고리 누락\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+              "pm.test(\"Category error\", () => pm.expect(pm.response.json().errors.map(e => e.field)).to.include(\"categoryId\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 존재하지 않는 카테고리",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/books",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "books"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"categoryId\": {{missingCategoryId}},\n  \"title\": \"없는 카테고리 요청\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+              "pm.test(\"Error reason\", () => pm.expect(pm.response.json().detail).to.eql(\"존재하지 않는 카테고리입니다.\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 같은 제목 재등록",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/books",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "books"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"categoryId\": {{categoryId}},\n  \"title\": \"{{bookTitle}}\",\n  \"description\": \"중복 요청\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+              "pm.test(\"Duplicate reason\", () => pm.expect(pm.response.json().detail).to.eql(\"이미 등록된 도서 제목입니다.\"));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
