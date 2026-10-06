@@ -11,8 +11,15 @@ import 'package:movielog/movielog_app.dart';
 import 'package:movielog/profile/profile_screen.dart';
 import 'package:movielog/register_screen.dart';
 import 'package:movielog/router/app_router.dart';
+import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
 void main() {
+  setUp(() {
+    SharedPreferencesAsyncPlatform.instance =
+        InMemorySharedPreferencesAsync.empty();
+  });
+
   testWidgets('최종 챌린지 사용자 흐름이 동작한다', (tester) async {
     AppRouter.router.go('/home');
     await tester.pumpWidget(const MovieLogApp());
@@ -87,35 +94,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(MovieListScreen), findsOneWidget);
     expect(find.byIcon(Icons.search), findsOneWidget);
-    expect(find.byIcon(Icons.filter_list), findsOneWidget);
+    expect(find.byIcon(Icons.filter_list), findsNothing);
+    expect(find.byType(DraggableScrollableSheet), findsNothing);
 
-    await tester.tap(find.byKey(const Key('genreFilterButton')));
+    await tester.tap(find.widgetWithText(FilterChip, '드라마'));
     await tester.pumpAndSettle();
-    expect(find.byType(DraggableScrollableSheet), findsOneWidget);
-
-    tester
-        .widget<CheckboxListTile>(find.widgetWithText(CheckboxListTile, '드라마'))
-        .onChanged
-        ?.call(true);
-    tester
-        .widget<CheckboxListTile>(find.widgetWithText(CheckboxListTile, 'SF'))
-        .onChanged
-        ?.call(true);
-    await tester.pump();
-    expect(
-      AppRouter
-          .router
-          .routeInformationProvider
-          .value
-          .uri
-          .queryParametersAll['genre'],
-      isNull,
-    );
-
-    tester
-        .widget<ElevatedButton>(find.byKey(const Key('applyGenreFilterButton')))
-        .onPressed
-        ?.call();
+    await tester.ensureVisible(find.widgetWithText(FilterChip, '로맨스'));
+    await tester.tap(find.widgetWithText(FilterChip, '로맨스'));
     await tester.pumpAndSettle();
     final selectedGenres = AppRouter
         .router
@@ -123,10 +108,10 @@ void main() {
         .value
         .uri
         .queryParametersAll['genre'];
-    expect(selectedGenres, containsAll(['드라마', 'SF']));
+    expect(selectedGenres, containsAll(['드라마', '로맨스']));
     expect(
       tester.widget<MovieGrid>(find.byType(MovieGrid)).movies,
-      hasLength(3),
+      hasLength(2),
     );
 
     await tester.tap(find.byType(MovieCard).first);
@@ -151,23 +136,11 @@ void main() {
           .value
           .uri
           .queryParametersAll['genre'],
-      containsAll(['드라마', 'SF']),
+      containsAll(['드라마', '로맨스']),
     );
 
-    await tester.tap(find.byKey(const Key('genreFilterButton')));
-    await tester.pumpAndSettle();
-    tester
-        .widget<CheckboxListTile>(find.widgetWithText(CheckboxListTile, '드라마'))
-        .onChanged
-        ?.call(false);
-    tester
-        .widget<CheckboxListTile>(find.widgetWithText(CheckboxListTile, 'SF'))
-        .onChanged
-        ?.call(false);
-    tester
-        .widget<ElevatedButton>(find.byKey(const Key('applyGenreFilterButton')))
-        .onPressed
-        ?.call();
+    await tester.ensureVisible(find.widgetWithText(FilterChip, '전체'));
+    await tester.tap(find.widgetWithText(FilterChip, '전체'));
     await tester.pumpAndSettle();
     expect(
       AppRouter
