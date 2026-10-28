@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
-import '../data/mock_movies.dart';
-import '../models/movie.dart';
-import '../movie/widgets/movie_card.dart';
+import '../data/models/tmdb_movie_dto.dart';
+import '../movie/widgets/tmdb_movie_card.dart';
+import '../view_models/movie_home_view_model.dart';
+import '../widgets/tmdb_poster_image.dart';
 import '../theme/app_colors.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -11,9 +13,6 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final featuredMovie = movies.first;
-    final popularMovies = movies.skip(1).toList();
-
     return PopScope(
       canPop: false,
       child: Scaffold(
@@ -32,18 +31,44 @@ class HomeScreen extends StatelessWidget {
             ),
           ],
         ),
-        body: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-          children: [
-            Text(
-              '오늘은 어떤\n영화를 볼까요?',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 20),
-            FeaturedMovieCard(movie: featuredMovie),
-            const SizedBox(height: 28),
-            PopularMoviesSection(movies: popularMovies),
-          ],
+        body: Consumer<MovieHomeViewModel>(
+          builder: (context, vm, child) {
+            if (vm.status == MovieHomeLoadStatus.idle ||
+                vm.status == MovieHomeLoadStatus.loading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (vm.status == MovieHomeLoadStatus.error) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(vm.message ?? '인기 영화를 불러오지 못했어요.'),
+                    FilledButton(
+                      onPressed: () =>
+                          context.read<MovieHomeViewModel>().loadPopular(),
+                      child: const Text('다시 시도'),
+                    ),
+                  ],
+                ),
+              );
+            }
+            if (vm.status == MovieHomeLoadStatus.empty) {
+              return const Center(child: Text('인기 영화가 없어요.'));
+            }
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+              children: [
+                Text(
+                  '오늘은 어떤\n영화를 볼까요?',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 20),
+                FeaturedMovieCard(movie: vm.popularMovies.first),
+                const SizedBox(height: 28),
+                PopularMoviesSection(movies: vm.popularMovies),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -53,11 +78,11 @@ class HomeScreen extends StatelessWidget {
 class FeaturedMovieCard extends StatelessWidget {
   const FeaturedMovieCard({super.key, required this.movie});
 
-  final Movie movie;
+  final TmdbMovieDto movie;
 
   @override
   Widget build(BuildContext context) {
-    void openDetail() => context.push('/movies/${movie.id}');
+    void openDetail() => context.push('/movies/${movie.id}', extra: movie);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -69,7 +94,11 @@ class FeaturedMovieCard extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Image.asset(movie.posterAsset, fit: BoxFit.cover),
+              TmdbPosterImage(
+                posterPath: movie.posterPath,
+                width: double.infinity,
+                height: double.infinity,
+              ),
               const DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -97,7 +126,7 @@ class FeaturedMovieCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: const Text(
-                        '추천 신작',
+                        '인기 영화',
                         style: TextStyle(color: Colors.white, fontSize: 12),
                       ),
                     ),
@@ -112,8 +141,7 @@ class FeaturedMovieCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${movie.genre} · ${movie.secondaryGenre} · '
-                      '${movie.durationMinutes}분',
+                      '★ ${movie.voteAverage.toStringAsFixed(1)}',
                       style: const TextStyle(color: Colors.white70),
                     ),
                     const SizedBox(height: 18),
@@ -139,7 +167,7 @@ class FeaturedMovieCard extends StatelessWidget {
 class PopularMoviesSection extends StatelessWidget {
   const PopularMoviesSection({super.key, required this.movies});
 
-  final List<Movie> movies;
+  final List<TmdbMovieDto> movies;
 
   @override
   Widget build(BuildContext context) {
@@ -173,12 +201,7 @@ class PopularMoviesSection extends StatelessWidget {
               final movie = movies[index];
               return SizedBox(
                 width: 145,
-                child: MovieCard(
-                  movie: movie,
-                  variant: MovieCardVariant.ranked,
-                  rank: index + 1,
-                  onTap: () => context.push('/movies/${movie.id}'),
-                ),
+                child: TmdbMovieCard(movie: movie, rank: index + 1),
               );
             },
           ),

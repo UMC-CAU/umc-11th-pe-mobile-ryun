@@ -1,4 +1,12 @@
 # Miscellaneous
+# TMDB local access token
+.env
+.env.*
+!.env.example
+
+# Local study notes, screenshots, and verification logs
+/docs/
+
 *.class
 *.log
 *.pyc
