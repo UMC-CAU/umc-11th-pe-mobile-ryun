@@ -1,23 +1,21 @@
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../home/home_screen.dart';
 import '../main_screen.dart';
 import '../movie/movie_detail_screen.dart';
-import '../movie/movie_list_screen.dart';
+import '../movie/tmdb_movie_list_screen.dart';
+import '../movie/tmdb_movie_detail_screen.dart';
+import '../data/models/tmdb_movie_dto.dart';
+import '../data/services/tmdb_movie_service.dart';
+import '../view_models/movie_home_view_model.dart';
+import '../view_models/movie_list_view_model.dart';
 import '../profile/profile_screen.dart';
 import '../register_screen.dart';
-import '../services/fake_movie_service.dart';
 import '../start_screen.dart';
 
 class AppRouter {
   AppRouter._();
-
-  // flutter run --dart-define=MOVIELOG_DEMO_FAIL_ONCE=true
-  // 같은 서비스 인스턴스를 유지하여 첫 실패 후 '다시 시도'는 성공하게 한다.
-  static final FakeMovieService _movieService =
-      const bool.fromEnvironment('MOVIELOG_DEMO_FAIL_ONCE')
-      ? FirstAttemptFailsMovieService()
-      : const FakeMovieService();
 
   static final router = GoRouter(
     initialLocation: '/start',
@@ -35,7 +33,12 @@ class AppRouter {
             routes: [
               GoRoute(
                 path: '/home',
-                builder: (context, state) => const HomeScreen(),
+                builder: (context, state) => ChangeNotifierProvider(
+                  create: (context) =>
+                      MovieHomeViewModel(context.read<TmdbMovieService>())
+                        ..loadPopular(),
+                  child: const HomeScreen(),
+                ),
               ),
             ],
           ),
@@ -43,9 +46,11 @@ class AppRouter {
             routes: [
               GoRoute(
                 path: '/movies',
-                builder: (context, state) => MovieListScreen(
-                  movieService: _movieService,
-                  selectedGenres: state.uri.queryParametersAll['genre'],
+                builder: (context, state) => ChangeNotifierProvider(
+                  create: (context) =>
+                      MovieListViewModel(context.read<TmdbMovieService>())
+                        ..loadInitial(),
+                  child: const TmdbMovieListScreen(),
                 ),
                 routes: [
                   GoRoute(
@@ -54,6 +59,10 @@ class AppRouter {
                       final movieId = int.tryParse(
                         state.pathParameters['movieId'] ?? '',
                       );
+                      final movie = state.extra;
+                      if (movie is TmdbMovieDto && movie.id == movieId) {
+                        return TmdbMovieDetailScreen(movie: movie);
+                      }
                       return MovieDetailScreen(movieId: movieId);
                     },
                   ),

@@ -1,169 +1,60 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:movielog/common/movie_rating_input.dart';
 import 'package:movielog/home/home_screen.dart';
 import 'package:movielog/movie/movie_detail_screen.dart';
-import 'package:movielog/movie/movie_list_screen.dart';
-import 'package:movielog/movie/widgets/movie_card.dart';
+import 'package:movielog/movie/tmdb_movie_detail_screen.dart';
+import 'package:movielog/movie/tmdb_movie_list_screen.dart';
+import 'package:movielog/movie/widgets/tmdb_movie_card.dart';
 import 'package:movielog/movielog_app.dart';
-import 'package:movielog/profile/profile_screen.dart';
 import 'package:movielog/register_screen.dart';
 import 'package:movielog/router/app_router.dart';
-import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
-import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
+
+import 'support/tmdb_test_service.dart';
 
 void main() {
-  setUp(() {
-    SharedPreferencesAsyncPlatform.instance =
-        InMemorySharedPreferencesAsync.empty();
-  });
-
-  testWidgets('최종 챌린지 사용자 흐름이 동작한다', (tester) async {
+  testWidgets('TMDB 홈, 장르 목록, 상세와 평점 ID 연결 및 탭 상태 유지', (tester) async {
+    final service = TestTmdbService();
     AppRouter.router.go('/home');
-    await tester.pumpWidget(const MovieLogApp());
+    await tester.pumpWidget(MovieLogApp(movieService: service));
     await tester.pumpAndSettle();
-
     expect(find.byType(HomeScreen), findsOneWidget);
-    expect(find.byType(NavigationBar), findsOneWidget);
-    expect(find.text('별빛 아래 우리'), findsOneWidget);
+    expect(service.popularCalls, 1);
 
     await tester.scrollUntilVisible(
-      find.text('상세보기'),
+      find.text('전체보기'),
       300,
       scrollable: find.byType(Scrollable).first,
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('상세보기'));
+    expect(find.byType(TmdbMovieCard), findsWidgets);
+    await tester.tap(find.text('전체보기'));
     await tester.pumpAndSettle();
+    expect(find.byType(TmdbMovieListScreen), findsOneWidget);
 
-    expect(find.byType(MovieDetailScreen), findsOneWidget);
-    expect(find.byType(NavigationBar), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('4.5'),
-      250,
-      scrollable: find.byType(Scrollable).first,
-    );
-    final indicator = tester.widget<RatingBarIndicator>(
-      find.byType(RatingBarIndicator),
-    );
-    expect(indicator.rating, 4.5);
-
+    await tester.tap(find.widgetWithText(FilterChip, '액션'));
+    await tester.pumpAndSettle();
+    expect(service.requests.last.genreIds, [28]);
+    await tester.tap(find.byType(TmdbMovieCard).first);
+    await tester.pumpAndSettle();
+    expect(find.byType(TmdbMovieDetailScreen), findsOneWidget);
     await tester.tap(find.text('평점 남기기'));
     await tester.pumpAndSettle();
-    expect(find.byType(MovieRatingInput), findsOneWidget);
-    expect(find.byKey(const Key('resetRatingButton')), findsNothing);
-
-    final ratingStars = find.descendant(
-      of: find.byType(MovieRatingInput),
-      matching: find.byIcon(Icons.star),
+    expect(
+      tester.widget<RatingDialog>(find.byType(RatingDialog)).movieId,
+      1000,
     );
-    await tester.tap(ratingStars.at(3));
-    await tester.pump();
     await tester.tap(find.text('확인'));
     await tester.pumpAndSettle();
     expect(find.text('다시 선택하기'), findsOneWidget);
-
-    await tester.pump(const Duration(seconds: 2));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('다시 선택하기'));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('resetRatingButton')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('resetRatingButton')));
-    await tester.pump();
-    await tester.tap(find.text('확인'));
-    await tester.pumpAndSettle();
-    expect(find.text('별점을 초기화했습니다.'), findsOneWidget);
-    expect(find.text('평점 남기기'), findsOneWidget);
-
-    await tester.pump(const Duration(seconds: 2));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('즐겨찾기'));
-    await tester.pump();
-    expect(find.text('즐겨찾기에 추가했습니다.'), findsOneWidget);
-    expect(find.text('즐겨찾기 해제'), findsOneWidget);
-
-    await tester.pump(const Duration(seconds: 2));
-    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
-    expect(find.byType(HomeScreen), findsOneWidget);
-
-    await tester.tap(find.byIcon(Icons.movie_outlined));
-    await tester.pumpAndSettle();
-    expect(find.byType(MovieListScreen), findsOneWidget);
-    expect(find.byIcon(Icons.search), findsOneWidget);
-    expect(find.byIcon(Icons.filter_list), findsNothing);
-    expect(find.byType(DraggableScrollableSheet), findsNothing);
-
-    await tester.tap(find.widgetWithText(FilterChip, '드라마'));
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.widgetWithText(FilterChip, '로맨스'));
-    await tester.tap(find.widgetWithText(FilterChip, '로맨스'));
-    await tester.pumpAndSettle();
-    final selectedGenres = AppRouter
-        .router
-        .routeInformationProvider
-        .value
-        .uri
-        .queryParametersAll['genre'];
-    expect(selectedGenres, containsAll(['드라마', '로맨스']));
-    expect(
-      tester.widget<MovieGrid>(find.byType(MovieGrid)).movies,
-      hasLength(2),
-    );
-
-    await tester.tap(find.byType(MovieCard).first);
-    await tester.pumpAndSettle();
-    expect(find.byType(MovieDetailScreen), findsOneWidget);
-
-    await tester.tap(find.byIcon(Icons.home_outlined));
-    await tester.pumpAndSettle();
-    expect(find.byType(HomeScreen), findsOneWidget);
-
-    await tester.tap(find.byIcon(Icons.movie_outlined));
-    await tester.pumpAndSettle();
-    expect(find.byType(MovieDetailScreen), findsOneWidget);
-
-    await tester.tap(find.byIcon(Icons.arrow_back));
-    await tester.pumpAndSettle();
-    expect(find.byType(MovieListScreen), findsOneWidget);
-    expect(
-      AppRouter
-          .router
-          .routeInformationProvider
-          .value
-          .uri
-          .queryParametersAll['genre'],
-      containsAll(['드라마', '로맨스']),
-    );
-
-    await tester.ensureVisible(find.widgetWithText(FilterChip, '전체'));
     await tester.tap(find.widgetWithText(FilterChip, '전체'));
     await tester.pumpAndSettle();
-    expect(
-      AppRouter
-          .router
-          .routeInformationProvider
-          .value
-          .uri
-          .queryParametersAll['genre'],
-      isNull,
-    );
-    expect(
-      tester.widget<MovieGrid>(find.byType(MovieGrid)).movies,
-      hasLength(6),
-    );
-
-    await tester.tap(find.byIcon(Icons.person_outline));
-    await tester.pumpAndSettle();
-    expect(find.byType(ProfileScreen), findsOneWidget);
-
+    expect(service.requests.last.genreIds, isNull);
     await tester.tap(find.byIcon(Icons.home_outlined));
     await tester.pumpAndSettle();
-    await tester.binding.handlePopRoute();
-    await tester.pumpAndSettle();
+    expect(service.popularCalls, 1);
     expect(find.byType(HomeScreen), findsOneWidget);
   });
 

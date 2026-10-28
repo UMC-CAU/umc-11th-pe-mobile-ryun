@@ -234,10 +234,12 @@ class RatingDialog extends StatefulWidget {
     super.key,
     required this.initialRating,
     required this.canReset,
+    this.movieId,
   });
 
   final double initialRating;
   final bool canReset;
+  final int? movieId;
 
   @override
   State<RatingDialog> createState() => _RatingDialogState();
