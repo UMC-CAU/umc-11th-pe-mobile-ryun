@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
+import '../theme/week6_style.dart';
 
 class MovieLogTextFormField extends StatefulWidget {
   const MovieLogTextFormField({
@@ -13,12 +13,15 @@ class MovieLogTextFormField extends StatefulWidget {
     required this.showValidation,
     required this.onChanged,
     required this.onSubmitted,
+    this.errorText,
     this.focusNode,
     this.keyboardType,
     this.textInputAction,
     this.isPassword = false,
+    this.showSuccessIcon = true,
   });
 
+  final String? errorText;
   final Key fieldKey;
   final String label;
   final String hintText;
@@ -27,6 +30,7 @@ class MovieLogTextFormField extends StatefulWidget {
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
   final bool isPassword;
+  final bool showSuccessIcon;
   final FormFieldValidator<String> validator;
   final bool showValidation;
   final ValueChanged<String> onChanged;
@@ -41,7 +45,7 @@ class _MovieLogTextFormFieldState extends State<MovieLogTextFormField> {
 
   @override
   Widget build(BuildContext context) {
-    final error = widget.validator(widget.controller.text);
+    final error = widget.errorText ?? widget.validator(widget.controller.text);
     final isInvalid = widget.showValidation && error != null;
     final isValid = widget.controller.text.isNotEmpty && error == null;
     final errorColor = Theme.of(context).colorScheme.error;
@@ -52,13 +56,13 @@ class _MovieLogTextFormFieldState extends State<MovieLogTextFormField> {
         Text(
           widget.label,
           style: const TextStyle(
-            color: AppColors.black,
-            fontSize: 16,
+            color: Week6Style.ink,
+            fontSize: 14,
             fontWeight: FontWeight.w700,
-            height: 1.5,
+            height: 19 / 14,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 7),
         TextFormField(
           key: widget.fieldKey,
           controller: widget.controller,
@@ -69,24 +73,32 @@ class _MovieLogTextFormFieldState extends State<MovieLogTextFormField> {
           enableSuggestions: !widget.isPassword,
           autocorrect: !widget.isPassword,
           autovalidateMode: AutovalidateMode.onUserInteraction,
-          validator: widget.validator,
+          validator: (value) => widget.validator(value) ?? widget.errorText,
+          forceErrorText: widget.errorText,
           onChanged: widget.onChanged,
           onFieldSubmitted: widget.onSubmitted,
           style: const TextStyle(
-            color: AppColors.black,
-            fontSize: 16,
+            color: Week6Style.hint,
+            fontSize: 14,
             fontWeight: FontWeight.w400,
+            height: 19 / 14,
           ),
           decoration: InputDecoration(
+            isDense: true,
+            errorText: widget.errorText,
             hintText: widget.hintText,
-            hintStyle: const TextStyle(color: AppColors.bodyText),
+            hintStyle: const TextStyle(color: Week6Style.hint),
             filled: true,
             fillColor: isInvalid
                 ? errorColor.withValues(alpha: 0.12)
-                : AppColors.surface,
+                : Week6Style.background,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
-              vertical: 16,
+              vertical: 12,
+            ),
+            suffixIconConstraints: const BoxConstraints(
+              minWidth: 40,
+              minHeight: 44,
             ),
             suffixIcon: _buildSuffixIcon(
               isInvalid: isInvalid,
@@ -94,22 +106,26 @@ class _MovieLogTextFormFieldState extends State<MovieLogTextFormField> {
               errorColor: errorColor,
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AppColors.gray),
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Week6Style.border),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AppColors.primary, width: 2),
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Week6Style.primary, width: 2),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: errorColor),
             ),
             focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: errorColor, width: 2),
             ),
-            errorStyle: TextStyle(color: errorColor, fontSize: 12),
+            errorStyle: TextStyle(
+              color: errorColor,
+              fontSize: 12,
+              height: 16 / 12,
+            ),
           ),
         ),
       ],
@@ -130,14 +146,18 @@ class _MovieLogTextFormFieldState extends State<MovieLogTextFormField> {
         },
         icon: Icon(
           _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility,
-          color: isInvalid ? errorColor : AppColors.bodyText,
+          color: isInvalid ? errorColor : Week6Style.hint,
         ),
       );
     }
 
     if (isInvalid) return Icon(Icons.error_outline, color: errorColor);
-    if (isValid) {
-      return const Icon(Icons.check_circle, color: AppColors.primary);
+    if (isValid && widget.showSuccessIcon) {
+      return const Icon(
+        Icons.check_circle,
+        color: Week6Style.primary,
+        size: 20,
+      );
     }
     return null;
   }

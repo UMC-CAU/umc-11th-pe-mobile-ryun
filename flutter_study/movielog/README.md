@@ -46,3 +46,21 @@ flutter test --dart-define=dart.vm.product=true test/tmdb_logging_mode_test.dart
 실패 재현 테스트는 실제 `.env`를 수정하지 않고 테스트용 잘못된 토큰을 사용합니다.
 실패 로그 파일 저장이 필요한 경우에만 `--dart-define=TMDB_WRITE_EVIDENCE=true`를 추가합니다.
 `docs/`의 학습 기록·캡처·로그는 로컬에만 보관하고 Git에서는 제외합니다.
+
+
+## 백엔드 5주차 미션 연동
+
+- `/register`: 닉네임·이메일 중복 확인 버튼이 Spring Boot API를 호출합니다.
+- `/my` → 내 평점 보기 (`/my/ratings`): 회원별 평점 조회, 페이지 크기 변경 및 이전/다음 이동.
+- 기본 서버 주소: `http://localhost:8080`. 필요 시 `--dart-define=BACKEND_URL=...`로 지정합니다.
+- 브라우저 실행 주소는 CORS 허용 출처 `http://localhost:5173`을 사용합니다.
+- 회원가입 제출은 기존 화면 전환 데모이며 회원가입/로그인 API는 이번 주차 범위가 아닙니다.
+
+## 6주차 워크북 — Essential / Guided Practice
+
+현재 앱의 회원가입 중복 확인과 `/my/ratings`는 워크북 v5 서버(`https://workbook.devnoco.com`)를 사용합니다.
+TMDB와 별도 Dio를 사용하며, 학습용 memberId는 1로 고정합니다. 실제 회원가입·평점 저장은 호출하지 않습니다.
+이전 로컬 Spring Boot용 Service/평점 화면은 기존 실습 자료로 남아 있으며 현재 앱 경로에서는 사용하지 않습니다.
+
+개념 분배 목록과 구현·캡처 기록은 로컬 `docs/week6/`에 있습니다. 이 폴더는 기존 Git 제외 정책을 따릅니다.
+6주차 미션은 아직 전달되지 않아 Required 및 최종 스터디 인증 대조는 보류합니다.

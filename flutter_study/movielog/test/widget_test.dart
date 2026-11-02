@@ -17,7 +17,13 @@ void main() {
     expect(find.byKey(const Key('emailField')), findsOneWidget);
     expect(find.byKey(const Key('passwordField')), findsOneWidget);
     expect(find.byKey(const Key('termsCheckbox')), findsOneWidget);
-    expect(find.byKey(const Key('registerButton')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('registerButton')),
+        matching: find.byType(ElevatedButton),
+      ),
+      findsOneWidget,
+    );
     expect(find.byType(MovieLogTextFormField), findsNWidgets(3));
   });
 
@@ -32,6 +38,8 @@ void main() {
     );
     expect(passwordInput.obscureText, isTrue);
 
+    await tester.ensureVisible(visibilityButton);
+    await tester.pumpAndSettle();
     await tester.tap(visibilityButton);
     await tester.pump();
 
@@ -40,6 +48,8 @@ void main() {
     );
     expect(passwordInput.obscureText, isFalse);
 
+    await tester.ensureVisible(visibilityButton);
+    await tester.pumpAndSettle();
     await tester.tap(visibilityButton);
     await tester.pump();
 
@@ -78,7 +88,10 @@ void main() {
     await tester.pumpWidget(buildSubject());
 
     ElevatedButton button = tester.widget(
-      find.byKey(const Key('registerButton')),
+      find.descendant(
+        of: find.byKey(const Key('registerButton')),
+        matching: find.byType(ElevatedButton),
+      ),
     );
     expect(button.onPressed, isNull);
 
@@ -95,7 +108,12 @@ void main() {
     await tester.tap(find.byKey(const Key('termsCheckbox')));
     await tester.pump();
 
-    button = tester.widget(find.byKey(const Key('registerButton')));
+    button = tester.widget(
+      find.descendant(
+        of: find.byKey(const Key('registerButton')),
+        matching: find.byType(ElevatedButton),
+      ),
+    );
     expect(button.onPressed, isNotNull);
   });
 
@@ -112,7 +130,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('registerButton')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('registerButton')),
+        matching: find.byType(ElevatedButton),
+      ),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -175,8 +199,18 @@ void main() {
     await tester.ensureVisible(find.byKey(const Key('termsCheckbox')));
     await tester.tap(find.byKey(const Key('termsCheckbox')));
     await tester.pump();
-    await tester.ensureVisible(find.byKey(const Key('registerButton')));
-    await tester.tap(find.byKey(const Key('registerButton')));
+    await tester.ensureVisible(
+      find.descendant(
+        of: find.byKey(const Key('registerButton')),
+        matching: find.byType(ElevatedButton),
+      ),
+    );
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const Key('registerButton')),
+        matching: find.byType(ElevatedButton),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('홈 테스트 화면'), findsOneWidget);

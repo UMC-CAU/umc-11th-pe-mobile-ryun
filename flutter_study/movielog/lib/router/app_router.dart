@@ -1,4 +1,10 @@
 import 'package:go_router/go_router.dart';
+import 'package:flutter/material.dart';
+
+import '../data/services/member_check_service.dart';
+import '../data/services/rating_api_service.dart';
+import '../view_models/my_ratings_view_model.dart';
+
 import 'package:provider/provider.dart';
 
 import '../home/home_screen.dart';
@@ -11,19 +17,24 @@ import '../data/services/tmdb_movie_service.dart';
 import '../view_models/movie_home_view_model.dart';
 import '../view_models/movie_list_view_model.dart';
 import '../profile/profile_screen.dart';
+import '../profile/my_ratings_screen.dart';
 import '../register_screen.dart';
 import '../start_screen.dart';
 
 class AppRouter {
   AppRouter._();
 
+  static final rootNavigatorKey = GlobalKey<NavigatorState>();
+
   static final router = GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/start',
     routes: [
       GoRoute(path: '/start', builder: (context, state) => const StartScreen()),
       GoRoute(
         path: '/register',
-        builder: (context, state) => const RegisterScreen(),
+        builder: (context, state) =>
+            RegisterScreen(memberService: context.read<MemberCheckService>()),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
@@ -75,6 +86,20 @@ class AppRouter {
               GoRoute(
                 path: '/my',
                 builder: (context, state) => const ProfileScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'ratings',
+                    parentNavigatorKey: rootNavigatorKey,
+                    builder: (context, state) => ChangeNotifierProvider(
+                      create: (context) => MyRatingsViewModel(
+                        context.read<RatingApiService>(),
+                        context.read<TmdbMovieService>(),
+                        sampleMemberId,
+                      )..load(),
+                      child: const MyRatingsScreen(),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

@@ -7,12 +7,16 @@ class TmdbPosterImage extends StatelessWidget {
     required this.width,
     required this.height,
     this.fit = BoxFit.cover,
+    this.placeholderColor,
+    this.showPlaceholderIcon = true,
   });
 
   final String? posterPath;
   final double width;
   final double height;
   final BoxFit fit;
+  final Color? placeholderColor;
+  final bool showPlaceholderIcon;
 
   static const _baseUrl = 'https://image.tmdb.org/t/p';
   static const _size = 'w500';
@@ -40,9 +44,11 @@ class TmdbPosterImage extends StatelessWidget {
     return Container(
       width: width,
       height: height,
-      color: Colors.grey.shade200,
+      color: placeholderColor ?? Colors.grey.shade200,
       alignment: Alignment.center,
-      child: const Icon(Icons.image_not_supported_outlined),
+      child: showPlaceholderIcon
+          ? const Icon(Icons.image_not_supported_outlined)
+          : null,
     );
   }
 }
