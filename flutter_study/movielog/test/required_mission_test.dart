@@ -58,10 +58,14 @@ void main() {
     expect(find.byType(HomeScreen), findsOneWidget);
   });
 
-  testWidgets('회원가입 화면에서는 뒤로 갈 수 없다', (tester) async {
+  testWidgets('회원가입의 시스템 뒤로가기는 막고 Figma 앱바 뒤로가기는 제공한다', (tester) async {
     final router = GoRouter(
       initialLocation: '/register',
       routes: [
+        GoRoute(
+          path: '/start',
+          builder: (context, state) => const Scaffold(body: Text('시작 화면')),
+        ),
         GoRoute(
           path: '/register',
           builder: (context, state) => const RegisterScreen(),
@@ -80,6 +84,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(RegisterScreen), findsOneWidget);
-    expect(find.byIcon(Icons.arrow_back), findsNothing);
+    expect(find.byIcon(Icons.arrow_back), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await tester.pumpAndSettle();
+    expect(find.text('시작 화면'), findsOneWidget);
   });
 }

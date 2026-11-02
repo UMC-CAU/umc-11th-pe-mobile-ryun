@@ -1,407 +1,216 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 
-import '../common/common_app_bar.dart';
-import '../theme/app_colors.dart';
+import '../theme/week6_style.dart';
+import '../widgets/week6_app_bar.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
-  static const _stats = [
-    ProfileStat(label: '본 영화', value: '342'),
-    ProfileStat(label: '평점', value: '4.2'),
-    ProfileStat(label: '즐겨찾기', value: '58'),
-  ];
-
-  static const _genres = ['드라마', 'SF', '애니메이션'];
-
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const CommonAppBar(title: '내 프로필'),
-      body: SafeArea(
-        top: false,
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Week6Style.background,
+    appBar: const Week6AppBar(title: '내 프로필', centerTitle: false),
+    body: SafeArea(
+      top: false,
+      child: SingleChildScrollView(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 896),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final widthScale = constraints.maxWidth / 390;
-                final heightScale = constraints.maxHeight / 580;
-                final scale = math.min(math.min(widthScale, heightScale), 1.0);
-
-                return Align(
-                  alignment: Alignment.topCenter,
-                  child: ProfileBody(
-                    scale: scale,
-                    stats: _stats,
-                    genres: _genres,
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class ProfileBody extends StatelessWidget {
-  const ProfileBody({
-    super.key,
-    required this.scale,
-    required this.stats,
-    required this.genres,
-  });
-
-  final double scale;
-  final List<ProfileStat> stats;
-  final List<String> genres;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: 16 * scale,
-        vertical: 24 * scale,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ProfileHeader(scale: scale),
-          SizedBox(height: 32 * scale),
-          EditProfileButton(scale: scale),
-          SizedBox(height: 32 * scale),
-          ProfileStats(scale: scale, stats: stats),
-          SizedBox(height: 32 * scale),
-          FavoriteGenres(scale: scale, genres: genres),
-        ],
-      ),
-    );
-  }
-}
-
-class ProfileHeader extends StatelessWidget {
-  const ProfileHeader({super.key, required this.scale});
-
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        ProfileAvatar(
-          scale: scale,
-          imagePath: 'assets/images/profile/profile_movielog.jpg',
-        ),
-        SizedBox(height: 24 * scale),
-        ProfileText(scale: scale),
-      ],
-    );
-  }
-}
-
-class ProfileAvatar extends StatelessWidget {
-  const ProfileAvatar({super.key, required this.scale, this.imagePath});
-
-  final double scale;
-
-  final String? imagePath;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final outerSize = 128 * scale;
-    final innerSize = 124 * scale;
-
-    return Container(
-      width: outerSize,
-      height: outerSize,
-      padding: EdgeInsets.all(2 * scale),
-      decoration: const BoxDecoration(
-        color: AppColors.lightViolet,
-        shape: BoxShape.circle,
-      ),
-      child: ClipOval(
-        child: imagePath == null
-            ? ColoredBox(
-                color: colors.primaryContainer,
-                child: Center(
-                  child: Icon(
-                    Icons.person,
-                    size: 64 * scale,
-                    color: colors.primary,
-                  ),
-                ),
-              )
-            : Image.asset(
-                imagePath!,
-                width: innerSize,
-                height: innerSize,
-                fit: BoxFit.cover,
-              ),
-      ),
-    );
-  }
-}
-
-class ProfileText extends StatelessWidget {
-  const ProfileText({super.key, required this.scale});
-
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 318 * scale,
-      child: Column(
-        children: [
-          SizedBox(
-            height: 28 * scale,
-            child: Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
+            constraints: const BoxConstraints(maxWidth: 390),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 25, 16, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    '무비러버',
-                    style: TextStyle(
-                      fontSize: 22 * scale,
-                      fontWeight: FontWeight.w500,
-                      height: 28 / 22,
-                      color: AppColors.black,
+                  Center(
+                    child: Container(
+                      width: 128,
+                      height: 128,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Week6Style.primary, width: 2),
+                      ),
+                      child: ClipOval(
+                        child: Transform.scale(
+                          scale: 1.15,
+                          child: Image.asset(
+                            'assets/images/profile/profile_movielog.jpg',
+                            fit: BoxFit.cover,
+                            alignment: const Alignment(0, -0.45),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                  SizedBox(width: 4 * scale),
-                  SvgPicture.asset(
-                    'assets/icons/check_circle.svg',
-                    width: 20 * scale,
-                    height: 20 * scale,
-                    semanticsLabel: '인증된 사용자',
+                  const SizedBox(height: 17),
+                  Text(
+                    '무비러버',
+                    textAlign: TextAlign.center,
+                    style: Week6Style.text(20, 27, weight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 11),
+                  Text(
+                    '매주 주말엔 영화관으로 출근하는 프로 관람객.',
+                    textAlign: TextAlign.center,
+                    style: Week6Style.text(13, 18, color: Week6Style.body),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '좋은 영화를 보고 기록하는 것을 좋아합니다.',
+                    textAlign: TextAlign.center,
+                    style: Week6Style.text(13, 18, color: Week6Style.body),
+                  ),
+                  const SizedBox(height: 30),
+                  Center(
+                    child: SizedBox(
+                      width: 128,
+                      height: 40,
+                      child: OutlinedButton(
+                        onPressed: () {},
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Week6Style.primary,
+                          padding: EdgeInsets.zero,
+                          side: const BorderSide(color: Week6Style.primary),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(9),
+                          ),
+                          textStyle: Week6Style.text(
+                            15,
+                            20,
+                            weight: FontWeight.w700,
+                          ),
+                        ),
+                        child: const Text('프로필 수정'),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 33),
+                  Row(
+                    children: [
+                      _stat('본 영화', '342'),
+                      const SizedBox(width: 8),
+                      _stat('평점', '4.2'),
+                      const SizedBox(width: 8),
+                      _stat('즐겨찾기', '58'),
+                    ],
+                  ),
+                  const SizedBox(height: 26),
+                  Material(
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: const BorderSide(
+                        color: Week6Style.entryBorder,
+                        width: 1.5,
+                      ),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: () => context.push('/my/ratings'),
+                      child: SizedBox(
+                        height: 64,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 18),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '내가 등록한 평점',
+                                  style: Week6Style.text(
+                                    16,
+                                    22,
+                                    weight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              const Icon(
+                                Icons.chevron_right,
+                                color: Week6Style.primary,
+                                size: 28,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  Text(
+                    '선호하는 장르',
+                    style: Week6Style.text(17, 23, weight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: ['드라마', 'SF', '애니메이션']
+                        .map(
+                          (label) => Container(
+                            height: 33,
+                            padding: const EdgeInsets.symmetric(horizontal: 18),
+                            decoration: BoxDecoration(
+                              color: Week6Style.chip,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  label,
+                                  style: Week6Style.text(
+                                    12,
+                                    16,
+                                    color: Week6Style.primary,
+                                    weight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                        .toList(),
                   ),
                 ],
               ),
             ),
           ),
-          SizedBox(height: 8 * scale),
-          SizedBox(
-            height: 48 * scale,
-            child: Center(
-              child: Text(
-                '매주 주말엔 영화관으로 출근하는 프로 관람객. 좋아하는 영화를 기록하고 있어요.',
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16 * scale,
-                  fontWeight: FontWeight.w500,
-                  height: 24 / 16,
-                  color: AppColors.bodyText,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class EditProfileButton extends StatelessWidget {
-  const EditProfileButton({super.key, required this.scale});
-
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: SizedBox(
-        width: 127 * scale,
-        height: 42 * scale,
-        child: ElevatedButton(
-          onPressed: () {},
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.transparent,
-            foregroundColor: AppColors.primary,
-            elevation: 0,
-            padding: EdgeInsets.symmetric(
-              horizontal: 24 * scale,
-              vertical: 8 * scale,
-            ),
-            side: const BorderSide(color: AppColors.primary),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8 * scale),
-            ),
-          ),
-          child: Text(
-            '프로필 수정',
-            maxLines: 1,
-            style: TextStyle(
-              fontSize: 16 * scale,
-              fontWeight: FontWeight.w500,
-              height: 24 / 16,
-            ),
-          ),
         ),
       ),
-    );
-  }
-}
+    ),
+  );
 
-class ProfileStats extends StatelessWidget {
-  const ProfileStats({super.key, required this.scale, required this.stats});
-
-  final double scale;
-  final List<ProfileStat> stats;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 86 * scale,
-      child: Row(
-        children: stats.asMap().entries.map((entry) {
-          final index = entry.key;
-          final stat = entry.value;
-          return Expanded(
-            child: Container(
-              margin: EdgeInsets.only(
-                left: index == 0 ? 0 : 4 * scale,
-                right: index == stats.length - 1 ? 0 : 4 * scale,
-              ),
-              child: StatItem(scale: scale, stat: stat),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-}
-
-class ProfileStat {
-  const ProfileStat({required this.label, required this.value});
-
-  final String label;
-  final String value;
-}
-
-class StatItem extends StatelessWidget {
-  const StatItem({super.key, required this.scale, required this.stat});
-
-  final double scale;
-  final ProfileStat stat;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      alignment: Alignment.center,
-      padding: EdgeInsets.all(16 * scale),
+  Widget _stat(String label, String value) => Expanded(
+    child: Container(
+      height: 86,
       decoration: BoxDecoration(
-        color: AppColors.statSurface,
-        border: Border.all(color: AppColors.primaryContainer),
-        borderRadius: BorderRadius.circular(12 * scale),
+        color: Week6Style.background,
+        border: Border.all(color: Week6Style.statBorder),
+        borderRadius: BorderRadius.circular(11),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            stat.label,
-            maxLines: 1,
-            style: TextStyle(
-              fontSize: 12 * scale,
-              fontWeight: FontWeight.w500,
-              height: 16 / 12,
-              color: AppColors.bodyText,
+            label,
+            style: Week6Style.text(
+              12,
+              16,
+              color: Week6Style.body,
+              weight: FontWeight.w700,
             ),
           ),
-          SizedBox(height: 8 * scale),
+          const SizedBox(height: 4),
           Text(
-            stat.value,
-            maxLines: 1,
-            style: TextStyle(
-              fontSize: 22 * scale,
-              fontWeight: FontWeight.w700,
-              height: 22 / 22,
-              color: AppColors.violet,
+            value,
+            style: Week6Style.text(
+              23,
+              31,
+              color: Week6Style.primary,
+              weight: FontWeight.w700,
             ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class FavoriteGenres extends StatelessWidget {
-  const FavoriteGenres({super.key, required this.scale, required this.genres});
-
-  final double scale;
-  final List<String> genres;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 72 * scale,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            height: 24 * scale,
-            child: Text(
-              '선호하는 장르',
-              style: TextStyle(
-                fontSize: 16 * scale,
-                fontWeight: FontWeight.w500,
-                height: 24 / 16,
-                color: AppColors.black,
-              ),
-            ),
-          ),
-          SizedBox(height: 16 * scale),
-          SizedBox(
-            height: 32 * scale,
-            child: Wrap(
-              spacing: 8 * scale,
-              children: genres
-                  .map((genre) => GenreChip(scale: scale, label: genre))
-                  .toList(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class GenreChip extends StatelessWidget {
-  const GenreChip({super.key, required this.scale, required this.label});
-
-  final double scale;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 32 * scale,
-      padding: EdgeInsets.symmetric(
-        horizontal: 16 * scale,
-        vertical: 8 * scale,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.primaryContainer,
-        borderRadius: BorderRadius.circular(9999),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12 * scale,
-          fontWeight: FontWeight.w500,
-          height: 16 / 12,
-          color: AppColors.violet,
-        ),
-      ),
-    );
-  }
+    ),
+  );
 }
