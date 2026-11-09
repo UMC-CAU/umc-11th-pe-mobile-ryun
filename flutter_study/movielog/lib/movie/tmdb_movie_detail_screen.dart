@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../data/models/tmdb_movie_dto.dart';
 import '../widgets/tmdb_poster_image.dart';
-import 'movie_detail_screen.dart';
+import '../widgets/rating_dialog.dart';
+import '../view_models/movie_detail_view_model.dart';
+import '../view_models/sign_up_view_model.dart';
+import '../view_models/learning_member_session.dart';
 
-// 목록에서 받은 DTO를 사용한다. 별도의 상세 API는 이번 실습 범위 밖이다.
 class TmdbMovieDetailScreen extends StatefulWidget {
   const TmdbMovieDetailScreen({super.key, required this.movie});
   final TmdbMovieDto movie;
@@ -14,26 +18,33 @@ class TmdbMovieDetailScreen extends StatefulWidget {
 }
 
 class _TmdbMovieDetailScreenState extends State<TmdbMovieDetailScreen> {
-  double? _rating;
   bool _favorite = false;
 
   Future<void> _openRating() async {
-    final rating = await showDialog<double>(
+    final model = context.read<MovieDetailViewModel>();
+    final saved = await showDialog<bool>(
       context: context,
+      barrierDismissible: false,
       builder: (_) => RatingDialog(
-        movieId: widget.movie.id,
-        initialRating: _rating ?? 3.5,
-        canReset: _rating != null,
+        onSubmit: (score, comment) async {
+          await model.createRating(score: score, comment: comment);
+          if (model.submitStatus != SubmitStatus.success) {
+            throw StateError(model.submitMessage ?? '저장에 실패했습니다.');
+          }
+        },
       ),
     );
-    if (!mounted || rating == null) return;
-    setState(() => _rating = rating == 0 ? null : rating);
+    if (!mounted || saved != true) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('평점을 등록했습니다. 마이페이지에서 확인해 주세요.')),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final movie = widget.movie;
     final releaseDate = movie.releaseDate;
+    final memberId = context.watch<LearningMemberSession>().memberId;
     return Scaffold(
       appBar: AppBar(title: Text(movie.title)),
       body: ListView(
@@ -54,7 +65,6 @@ class _TmdbMovieDetailScreenState extends State<TmdbMovieDetailScreen> {
           if (releaseDate != null && releaseDate.length >= 4)
             Text(releaseDate.substring(0, 4)),
           Text('TMDB 평점: ${movie.voteAverage.toStringAsFixed(1)} / 10'),
-          if (_rating != null) Text('내 별점: ${_rating!.toStringAsFixed(1)}점'),
           const SizedBox(height: 24),
           Text('시놉시스', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 12),
@@ -63,20 +73,30 @@ class _TmdbMovieDetailScreenState extends State<TmdbMovieDetailScreen> {
       ),
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.all(16),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => setState(() => _favorite = !_favorite),
-                child: Text(_favorite ? '즐겨찾기 해제' : '즐겨찾기'),
+            if (memberId == null)
+              TextButton(
+                onPressed: () => context.push('/register'),
+                child: const Text('평점을 남기려면 학습용 회원가입을 완료해 주세요.'),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: FilledButton(
-                onPressed: _openRating,
-                child: Text(_rating == null ? '평점 남기기' : '다시 선택하기'),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => setState(() => _favorite = !_favorite),
+                    child: Text(_favorite ? '즐겨찾기 해제' : '즐겨찾기'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: memberId == null ? null : _openRating,
+                    child: const Text('평점 남기기'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

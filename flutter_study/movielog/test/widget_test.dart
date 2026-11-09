@@ -1,12 +1,26 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:movielog/register_screen.dart';
+import 'package:movielog/data/services/sign_up_service.dart';
+import 'package:movielog/view_models/learning_member_session.dart';
+import 'package:provider/provider.dart';
+
+import 'week7_test.dart' show envelope, fakeWorkbook;
+
 import 'package:movielog/common/movie_log_text_form_field.dart';
 
 void main() {
   Widget buildSubject() {
-    return const MaterialApp(home: RegisterScreen());
+    return MaterialApp(
+      home: RegisterScreen(
+        memberService: SignUpService(
+          fakeWorkbook((_) => (200, {'available': true})),
+        ),
+      ),
+    );
   }
 
   testWidgets('회원가입 화면의 필수 입력 요소를 표시한다', (tester) async {
@@ -102,12 +116,25 @@ void main() {
     );
     await tester.enterText(
       find.byKey(const Key('passwordField')),
-      'password1234',
+      'Study1234!',
     );
     await tester.ensureVisible(find.byKey(const Key('termsCheckbox')));
     await tester.tap(find.byKey(const Key('termsCheckbox')));
     await tester.pump();
 
+    button = tester.widget(
+      find.descendant(
+        of: find.byKey(const Key('registerButton')),
+        matching: find.byType(ElevatedButton),
+      ),
+    );
+    expect(button.onPressed, isNull);
+    for (final key in ['nicknameCheckButton', 'emailCheckButton']) {
+      final check = find.byKey(Key(key));
+      await tester.ensureVisible(check);
+      await tester.tap(check);
+      await tester.pumpAndSettle();
+    }
     button = tester.widget(
       find.descendant(
         of: find.byKey(const Key('registerButton')),
@@ -169,51 +196,100 @@ void main() {
     expect(editableText.focusNode.hasFocus, isFalse);
   });
 
-  testWidgets('Form 제출 성공 시 홈 화면으로 교체한다', (tester) async {
+  testWidgets('가입 요청 중 이탈을 막고 성공 시 memberId를 저장한 뒤 영화 목록으로 이동한다', (
+    tester,
+  ) async {
+    final pending = Completer<(int, Object?)>();
+    var submits = 0;
+    final service = SignUpService(
+      fakeWorkbook((request) {
+        if (request.method == 'GET') return (200, {'available': true});
+        if (submits++ == 0) {
+          return (400, envelope(400, '비밀번호 형식을 확인해 주세요.'));
+        }
+        return pending.future;
+      }),
+    );
+    final session = LearningMemberSession();
+    addTearDown(session.dispose);
     final router = GoRouter(
-      initialLocation: '/register',
+      initialLocation: '/start',
       routes: [
         GoRoute(
-          path: '/register',
-          builder: (context, state) => const RegisterScreen(),
+          path: '/start',
+          builder: (context, _) => Scaffold(
+            body: TextButton(
+              onPressed: () => context.push('/register'),
+              child: const Text('시작'),
+            ),
+          ),
         ),
         GoRoute(
-          path: '/home',
-          builder: (context, state) => const Scaffold(body: Text('홈 테스트 화면')),
+          path: '/register',
+          builder: (_, _) => RegisterScreen(memberService: service),
+        ),
+        GoRoute(
+          path: '/movies',
+          builder: (_, _) => const Scaffold(body: Text('영화 테스트 화면')),
         ),
       ],
     );
     addTearDown(router.dispose);
-
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
-
-    await tester.enterText(find.byKey(const Key('nicknameField')), '무비러버');
-    await tester.enterText(
-      find.byKey(const Key('emailField')),
-      'movie@example.com',
-    );
-    await tester.enterText(
-      find.byKey(const Key('passwordField')),
-      'password1234',
-    );
-    await tester.ensureVisible(find.byKey(const Key('termsCheckbox')));
-    await tester.tap(find.byKey(const Key('termsCheckbox')));
-    await tester.pump();
-    await tester.ensureVisible(
-      find.descendant(
-        of: find.byKey(const Key('registerButton')),
-        matching: find.byType(ElevatedButton),
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: session,
+        child: MaterialApp.router(routerConfig: router),
       ),
     );
-    await tester.tap(
-      find.descendant(
-        of: find.byKey(const Key('registerButton')),
-        matching: find.byType(ElevatedButton),
-      ),
-    );
+    await tester.tap(find.text('시작'));
     await tester.pumpAndSettle();
-
-    expect(find.text('홈 테스트 화면'), findsOneWidget);
+    for (final (key, text) in [
+      ('nicknameField', '무비러버'),
+      ('emailField', 'movie@example.com'),
+      ('passwordField', 'Study1234!'),
+    ]) {
+      await tester.enterText(find.byKey(Key(key)), text);
+      await tester.pump();
+    }
+    for (final key in [
+      'nicknameCheckButton',
+      'emailCheckButton',
+      'termsCheckbox',
+    ]) {
+      final control = find.byKey(Key(key));
+      await tester.ensureVisible(control);
+      await tester.tap(control);
+      await tester.pumpAndSettle();
+    }
+    final submit = find.byKey(const Key('registerButton'));
+    await tester.ensureVisible(submit);
+    await tester.tap(submit);
+    await tester.pumpAndSettle();
+    expect(find.text('비밀번호 형식을 확인해 주세요.'), findsOneWidget);
+    final password = find.byKey(const Key('passwordField'));
+    await tester.ensureVisible(password);
+    await tester.enterText(password, 'Study2345!');
+    await tester.pumpAndSettle();
+    expect(find.text('비밀번호 형식을 확인해 주세요.'), findsNothing);
+    await tester.ensureVisible(submit);
+    await tester.tap(submit);
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    expect(find.byType(RegisterScreen), findsOneWidget);
+    expect(session.memberId, isNull);
+    pending.complete((
+      201,
+      envelope(201, '가입', {
+        'memberId': 42,
+        'nickname': '무비러버',
+        'email': 'movie@example.com',
+      }),
+    ));
+    await tester.pumpAndSettle();
+    expect(session.memberId, 42);
+    expect(find.text('영화 테스트 화면'), findsOneWidget);
     expect(find.byType(RegisterScreen), findsNothing);
   });
 }
