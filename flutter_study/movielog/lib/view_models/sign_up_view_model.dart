@@ -2,9 +2,12 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import '../data/services/member_api_service.dart';
-import '../data/services/member_check_service.dart';
+import '../data/services/sign_up_service.dart';
+import '../data/models/create_member_request.dart';
 
 enum CheckStatus { idle, checking, available, duplicated, error }
+
+enum SubmitStatus { idle, submitting, success, error }
 
 // Each field owns its request version, so concurrent checks cannot affect each other.
 class _CheckField {
@@ -21,6 +24,63 @@ class SignUpViewModel extends ChangeNotifier {
   final _nickname = _CheckField();
   final _email = _CheckField();
   bool _disposed = false;
+  SubmitStatus submitStatus = SubmitStatus.idle;
+  int? createdMemberId;
+  String? passwordErrorText;
+  String? snackbarMessage;
+  bool get isSubmitting => submitStatus == SubmitStatus.submitting;
+  bool get canSubmit =>
+      !isSubmitting &&
+      _nickname.status == CheckStatus.available &&
+      _email.status == CheckStatus.available;
+
+  void onPasswordChanged() {
+    passwordErrorText = null;
+    snackbarMessage = null;
+    if (!isSubmitting) submitStatus = SubmitStatus.idle;
+    if (!_disposed) notifyListeners();
+  }
+
+  Future<void> submit(CreateMemberRequest request) async {
+    if (_disposed ||
+        !canSubmit ||
+        request.nickname.trim() != _nickname.value ||
+        request.email.trim() != _email.value) {
+      return;
+    }
+    submitStatus = SubmitStatus.submitting;
+    createdMemberId = null;
+    passwordErrorText = null;
+    snackbarMessage = null;
+    notifyListeners();
+    try {
+      final service = _service;
+      if (service is! SignUpService) throw StateError('회원가입 Service가 필요합니다.');
+      final response = await service.signUp(request);
+      if (_disposed) return;
+      final id = response.result?.memberId;
+      if (!response.isSuccess || id == null || id < 1) {
+        throw StateError('회원가입 결과에 memberId가 없습니다.');
+      }
+      createdMemberId = id;
+      submitStatus = SubmitStatus.success;
+    } on DioException catch (error) {
+      if (_disposed) return;
+      submitStatus = SubmitStatus.error;
+      final message = writeSignUpErrorMessage(error);
+      if (error.response?.statusCode == 400 &&
+          RegExp(r'비밀번호.*(형식|특수문자|자 이상)').hasMatch(message)) {
+        passwordErrorText = message;
+      } else {
+        snackbarMessage = message;
+      }
+    } on Object {
+      if (_disposed) return;
+      submitStatus = SubmitStatus.error;
+      snackbarMessage = '가입 결과를 확인하지 못했습니다. 새 요청 전에 서버 상태를 확인해 주세요.';
+    }
+    if (!_disposed) notifyListeners();
+  }
 
   CheckStatus get nicknameCheckStatus => _nickname.status;
   CheckStatus get emailCheckStatus => _email.status;
@@ -29,6 +89,7 @@ class SignUpViewModel extends ChangeNotifier {
   bool get canCheckNickname => _canCheck(_nickname);
   bool get canCheckEmail => _canCheck(_email);
   bool _canCheck(_CheckField field) =>
+      !isSubmitting &&
       field.status != CheckStatus.checking &&
       field.status != CheckStatus.duplicated &&
       field.value.isNotEmpty;
@@ -37,7 +98,11 @@ class SignUpViewModel extends ChangeNotifier {
   void onEmailChanged(String value) => _change(_email, value, '이메일');
 
   void _change(_CheckField field, String value, String label) {
-    if (_disposed) return;
+    if (_disposed || isSubmitting) return;
+    snackbarMessage = null;
+    passwordErrorText = null;
+    createdMemberId = null;
+    submitStatus = SubmitStatus.idle;
     field.value = value.trim();
     field.version++;
     final duplicated =
@@ -80,6 +145,10 @@ class SignUpViewModel extends ChangeNotifier {
       if (!isCurrent()) return;
       field.status = CheckStatus.error;
       field.error = error.message;
+    } on Object {
+      if (!isCurrent()) return;
+      field.status = CheckStatus.error;
+      field.error = '중복 확인 결과를 읽지 못했습니다. 다시 시도해 주세요.';
     }
     if (isCurrent()) notifyListeners();
   }

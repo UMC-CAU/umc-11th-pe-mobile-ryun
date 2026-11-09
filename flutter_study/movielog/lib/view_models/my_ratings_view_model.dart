@@ -22,6 +22,95 @@ class MyRatingsViewModel extends ChangeNotifier {
   List<RatingWithMovie> ratings = const [];
   MyRatingsLoadStatus status = MyRatingsLoadStatus.idle;
   String? message;
+  String? refreshWarning;
+  bool isWriting = false;
+
+  Future<void> _refreshAfterWrite() async {
+    await load();
+    if (_disposed) return;
+    refreshWarning = status == MyRatingsLoadStatus.error
+        ? '저장은 완료됐지만 목록을 불러오지 못했습니다. 조회만 다시 시도해 주세요.'
+        : null;
+    notifyListeners();
+  }
+
+  Future<void> updateRating({
+    required int ratingId,
+    required int score,
+    String? comment,
+  }) => _write(
+    () => _service.updateRating(
+      memberId: memberId,
+      ratingId: ratingId,
+      score: score,
+      comment: comment,
+    ),
+  );
+
+  Future<void> deleteRating(int ratingId) => _write(
+    () => _service.deleteRating(memberId: memberId, ratingId: ratingId),
+  );
+
+  Future<Set<int>> deleteSelectedRatings(Set<int> ratingIds) async {
+    if (_disposed || isWriting || ratingIds.isEmpty) {
+      return {...ratingIds};
+    }
+    final targets = {...ratingIds};
+    final deleted = <int>{};
+    isWriting = true;
+    notifyListeners();
+    try {
+      for (final ratingId in targets) {
+        if (_disposed) break;
+        try {
+          await _service.deleteRating(memberId: memberId, ratingId: ratingId);
+          deleted.add(ratingId);
+        } on DioException {
+          // A rejected request must not prevent the other selections being tried.
+        } on StateError {
+          // An unexpected success status also leaves the card available for retry.
+        }
+      }
+      if (!_disposed && deleted.isNotEmpty) {
+        ratings = ratings
+            .where((entry) => !deleted.contains(entry.rating.ratingId))
+            .toList();
+        if (ratings.isEmpty) {
+          status = MyRatingsLoadStatus.empty;
+          message = null;
+        }
+      }
+      return targets.difference(deleted);
+    } finally {
+      isWriting = false;
+      if (!_disposed) notifyListeners();
+    }
+  }
+
+  Future<void> _write(Future<void> Function() action) async {
+    if (_disposed || isWriting) throw StateError('처리 중입니다. 잠시 기다려 주세요.');
+    isWriting = true;
+    notifyListeners();
+    try {
+      try {
+        await action();
+      } on DioException catch (error) {
+        if (_disposed) rethrow;
+        final writeMessage = writeErrorMessage(error);
+        if (shouldRefreshAfterRatingError(error)) await load();
+        if (!_disposed) {
+          message = writeMessage;
+          notifyListeners();
+        }
+        rethrow;
+      }
+      // A refresh failure is never rethrown as a failed write.
+      await _refreshAfterWrite();
+    } finally {
+      isWriting = false;
+      if (!_disposed) notifyListeners();
+    }
+  }
 
   Future<void> load() async {
     if (_disposed) return;
@@ -54,6 +143,7 @@ class MyRatingsViewModel extends ChangeNotifier {
       }
       if (_disposed || version != _requestVersion) return;
       ratings = entries;
+      refreshWarning = null;
       status = entries.isEmpty
           ? MyRatingsLoadStatus.empty
           : MyRatingsLoadStatus.success;
@@ -64,6 +154,10 @@ class MyRatingsViewModel extends ChangeNotifier {
       if (_disposed || version != _requestVersion) return;
       status = MyRatingsLoadStatus.error;
       message = writeMyRatingsErrorMessage(error);
+    } on Object {
+      if (_disposed || version != _requestVersion) return;
+      status = MyRatingsLoadStatus.error;
+      message = '평점 목록 응답을 읽지 못했습니다. 다시 시도해 주세요.';
     }
     if (!_disposed && version == _requestVersion) notifyListeners();
   }

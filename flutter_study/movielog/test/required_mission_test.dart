@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:movielog/home/home_screen.dart';
-import 'package:movielog/movie/movie_detail_screen.dart';
 import 'package:movielog/movie/tmdb_movie_detail_screen.dart';
 import 'package:movielog/movie/tmdb_movie_list_screen.dart';
 import 'package:movielog/movie/widgets/tmdb_movie_card.dart';
@@ -13,7 +12,7 @@ import 'package:movielog/router/app_router.dart';
 import 'support/tmdb_test_service.dart';
 
 void main() {
-  testWidgets('TMDB 홈, 장르 목록, 상세와 평점 ID 연결 및 탭 상태 유지', (tester) async {
+  testWidgets('TMDB 홈, 장르 목록, 상세 연결, 가입 전 평점 제한 및 탭 상태 유지', (tester) async {
     final service = TestTmdbService();
     AppRouter.router.go('/home');
     await tester.pumpWidget(MovieLogApp(movieService: service));
@@ -38,15 +37,11 @@ void main() {
     await tester.tap(find.byType(TmdbMovieCard).first);
     await tester.pumpAndSettle();
     expect(find.byType(TmdbMovieDetailScreen), findsOneWidget);
-    await tester.tap(find.text('평점 남기기'));
-    await tester.pumpAndSettle();
-    expect(
-      tester.widget<RatingDialog>(find.byType(RatingDialog)).movieId,
-      1000,
+    final rateButton = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, '평점 남기기'),
     );
-    await tester.tap(find.text('확인'));
-    await tester.pumpAndSettle();
-    expect(find.text('다시 선택하기'), findsOneWidget);
+    expect(rateButton.onPressed, isNull);
+    expect(find.text('평점을 남기려면 학습용 회원가입을 완료해 주세요.'), findsOneWidget);
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilterChip, '전체'));
@@ -58,7 +53,7 @@ void main() {
     expect(find.byType(HomeScreen), findsOneWidget);
   });
 
-  testWidgets('회원가입의 시스템 뒤로가기는 막고 Figma 앱바 뒤로가기는 제공한다', (tester) async {
+  testWidgets('제출 전 회원가입 화면은 앱바 뒤로가기를 제공한다', (tester) async {
     final router = GoRouter(
       initialLocation: '/register',
       routes: [
@@ -80,9 +75,6 @@ void main() {
 
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
     await tester.pumpAndSettle();
-    await tester.binding.handlePopRoute();
-    await tester.pumpAndSettle();
-
     expect(find.byType(RegisterScreen), findsOneWidget);
     expect(find.byIcon(Icons.arrow_back), findsOneWidget);
     await tester.tap(find.byIcon(Icons.arrow_back));

@@ -1,7 +1,8 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 
-import '../data/services/member_check_service.dart';
+import '../data/services/sign_up_service.dart';
+import '../view_models/learning_member_session.dart';
 import '../data/services/rating_api_service.dart';
 import '../view_models/my_ratings_view_model.dart';
 
@@ -9,9 +10,8 @@ import 'package:provider/provider.dart';
 
 import '../home/home_screen.dart';
 import '../main_screen.dart';
-import '../movie/movie_detail_screen.dart';
+import '../movie/movie_detail_loader.dart';
 import '../movie/tmdb_movie_list_screen.dart';
-import '../movie/tmdb_movie_detail_screen.dart';
 import '../data/models/tmdb_movie_dto.dart';
 import '../data/services/tmdb_movie_service.dart';
 import '../view_models/movie_home_view_model.dart';
@@ -34,7 +34,7 @@ class AppRouter {
       GoRoute(
         path: '/register',
         builder: (context, state) =>
-            RegisterScreen(memberService: context.read<MemberCheckService>()),
+            RegisterScreen(memberService: context.read<SignUpService>()),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
@@ -71,10 +71,20 @@ class AppRouter {
                         state.pathParameters['movieId'] ?? '',
                       );
                       final movie = state.extra;
-                      if (movie is TmdbMovieDto && movie.id == movieId) {
-                        return TmdbMovieDetailScreen(movie: movie);
+                      if (movieId == null || movieId < 1) {
+                        return Scaffold(
+                          appBar: AppBar(),
+                          body: const Center(child: Text('영화 ID가 올바르지 않습니다.')),
+                        );
                       }
-                      return MovieDetailScreen(movieId: movieId);
+                      return MovieDetailLoader(
+                        key: ValueKey(movieId),
+                        movieId: movieId,
+                        initialMovie:
+                            movie is TmdbMovieDto && movie.id == movieId
+                            ? movie
+                            : null,
+                      );
                     },
                   ),
                 ],
@@ -90,14 +100,31 @@ class AppRouter {
                   GoRoute(
                     path: 'ratings',
                     parentNavigatorKey: rootNavigatorKey,
-                    builder: (context, state) => ChangeNotifierProvider(
-                      create: (context) => MyRatingsViewModel(
-                        context.read<RatingApiService>(),
-                        context.read<TmdbMovieService>(),
-                        sampleMemberId,
-                      )..load(),
-                      child: const MyRatingsScreen(),
-                    ),
+                    builder: (context, state) {
+                      final id = context
+                          .watch<LearningMemberSession>()
+                          .memberId;
+                      if (id == null) {
+                        return Scaffold(
+                          appBar: AppBar(title: const Text('내가 등록한 평점')),
+                          body: Center(
+                            child: TextButton(
+                              onPressed: () => context.push('/register'),
+                              child: const Text('학습용 회원가입이 필요합니다.'),
+                            ),
+                          ),
+                        );
+                      }
+                      return ChangeNotifierProvider(
+                        key: ValueKey(id),
+                        create: (context) => MyRatingsViewModel(
+                          context.read<RatingApiService>(),
+                          context.read<TmdbMovieService>(),
+                          id,
+                        )..load(),
+                        child: const MyRatingsScreen(),
+                      );
+                    },
                   ),
                 ],
               ),

@@ -7,7 +7,9 @@ import 'theme/week6_style.dart';
 import 'common/movie_log_text_form_field.dart';
 
 import 'core/network/movie_log_client.dart';
-import 'data/services/member_check_service.dart';
+import 'data/services/sign_up_service.dart';
+import 'data/models/create_member_request.dart';
+import 'view_models/learning_member_session.dart';
 import 'view_models/sign_up_view_model.dart';
 import 'widgets/movielog_button.dart';
 
@@ -38,7 +40,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ? createMovieLogClient()
       : null;
   late final SignUpViewModel _viewModel = SignUpViewModel(
-    widget.memberService ?? MemberCheckService(_ownedClient!),
+    widget.memberService ?? SignUpService(_ownedClient!),
   );
   bool get _nicknameChecking =>
       _viewModel.nicknameCheckStatus == CheckStatus.checking;
@@ -56,6 +58,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       : _viewModel.nicknameErrorText;
   String? get _emailMessage =>
       _emailAvailable == true ? '사용 가능한 이메일입니다.' : _viewModel.emailErrorText;
+
+  void _dismissSubmitError() {
+    if (_viewModel.snackbarMessage != null) {
+      ScaffoldMessenger.of(context).removeCurrentSnackBar();
+    }
+  }
 
   Future<void> _checkAvailability(bool isNickname) async {
     final value = (isNickname ? _nicknameController : _emailController).text;
@@ -80,9 +88,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _nicknameError(_nicknameController.text) == null &&
       _emailError(_emailController.text) == null &&
       _passwordError(_passwordController.text) == null &&
+      _viewModel.passwordErrorText == null &&
       _agreedToTerms &&
-      _nicknameAvailable != false &&
-      _emailAvailable != false &&
+      _viewModel.canSubmit &&
       !_nicknameChecking &&
       !_emailChecking;
 
@@ -98,14 +106,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     setState(() => _submitted = true);
 
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid || !_canSubmit) return;
 
     FocusScope.of(context).unfocus();
-    context.pushReplacement('/home');
+    await _viewModel.submit(
+      CreateMemberRequest(
+        email: _emailController.text,
+        password: _passwordController.text,
+        nickname: _nicknameController.text,
+      ),
+    );
+    if (!mounted) return;
+    if (_viewModel.submitStatus == SubmitStatus.success &&
+        _viewModel.createdMemberId != null) {
+      context.read<LearningMemberSession>().setMemberId(
+        _viewModel.createdMemberId!,
+      );
+      _passwordController.clear();
+      context.go('/movies');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('회원가입을 완료했습니다. 영화에 평점을 남겨보세요.')),
+      );
+    } else if (_viewModel.snackbarMessage != null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(_viewModel.snackbarMessage!)));
+    }
   }
 
   @override
@@ -118,12 +147,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Widget _buildScreen(BuildContext context) {
     return PopScope(
-      canPop: false,
+      canPop: !_viewModel.isSubmitting,
       child: Scaffold(
         backgroundColor: Week6Style.background,
         appBar: Week6AppBar(
           title: '회원가입',
-          onBack: () => context.canPop() ? context.pop() : context.go('/start'),
+          onBack: () {
+            if (_viewModel.isSubmitting) return;
+            context.canPop() ? context.pop() : context.go('/start');
+          },
         ),
         body: GestureDetector(
           behavior: HitTestBehavior.translucent,
@@ -171,48 +203,57 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               children: [
                                 const RegisterHeader(),
                                 const SizedBox(height: 30),
-                                RegisterFields(
-                                  nicknameController: _nicknameController,
-                                  emailController: _emailController,
-                                  passwordController: _passwordController,
-                                  emailFocusNode: _emailFocusNode,
-                                  passwordFocusNode: _passwordFocusNode,
-                                  nicknameError: _nicknameError,
-                                  emailError: _emailError,
-                                  passwordError: _passwordError,
-                                  nicknameShowsValidation:
-                                      _nicknameTouched || _submitted,
-                                  emailShowsValidation:
-                                      _emailTouched || _submitted,
-                                  passwordShowsValidation:
-                                      _passwordTouched || _submitted,
-                                  onCheckNickname: _viewModel.canCheckNickname
-                                      ? () => _checkAvailability(true)
-                                      : null,
-                                  onCheckEmail: _viewModel.canCheckEmail
-                                      ? () => _checkAvailability(false)
-                                      : null,
-                                  nicknameChecking: _nicknameChecking,
-                                  emailChecking: _emailChecking,
-                                  nicknameMessage: _nicknameMessage,
-                                  emailMessage: _emailMessage,
-                                  nicknameAvailable: _nicknameAvailable,
-                                  emailAvailable: _emailAvailable,
-                                  onNicknameChanged: (value) {
-                                    setState(() {
-                                      _nicknameTouched = true;
-                                      _viewModel.onNicknameChanged(value);
-                                    });
-                                  },
-                                  onEmailChanged: (value) {
-                                    setState(() {
-                                      _emailTouched = true;
-                                      _viewModel.onEmailChanged(value);
-                                    });
-                                  },
-                                  onPasswordChanged: (_) {
-                                    setState(() => _passwordTouched = true);
-                                  },
+                                AbsorbPointer(
+                                  absorbing: _viewModel.isSubmitting,
+                                  child: RegisterFields(
+                                    nicknameController: _nicknameController,
+                                    emailController: _emailController,
+                                    passwordController: _passwordController,
+                                    emailFocusNode: _emailFocusNode,
+                                    passwordFocusNode: _passwordFocusNode,
+                                    nicknameError: _nicknameError,
+                                    emailError: _emailError,
+                                    passwordError: _passwordError,
+                                    passwordErrorText:
+                                        _viewModel.passwordErrorText,
+                                    nicknameShowsValidation:
+                                        _nicknameTouched || _submitted,
+                                    emailShowsValidation:
+                                        _emailTouched || _submitted,
+                                    passwordShowsValidation:
+                                        _passwordTouched || _submitted,
+                                    onCheckNickname: _viewModel.canCheckNickname
+                                        ? () => _checkAvailability(true)
+                                        : null,
+                                    onCheckEmail: _viewModel.canCheckEmail
+                                        ? () => _checkAvailability(false)
+                                        : null,
+                                    nicknameChecking: _nicknameChecking,
+                                    emailChecking: _emailChecking,
+                                    nicknameMessage: _nicknameMessage,
+                                    emailMessage: _emailMessage,
+                                    nicknameAvailable: _nicknameAvailable,
+                                    emailAvailable: _emailAvailable,
+                                    onNicknameChanged: (value) {
+                                      _dismissSubmitError();
+                                      setState(() {
+                                        _nicknameTouched = true;
+                                        _viewModel.onNicknameChanged(value);
+                                      });
+                                    },
+                                    onEmailChanged: (value) {
+                                      _dismissSubmitError();
+                                      setState(() {
+                                        _emailTouched = true;
+                                        _viewModel.onEmailChanged(value);
+                                      });
+                                    },
+                                    onPasswordChanged: (_) {
+                                      _dismissSubmitError();
+                                      setState(() => _passwordTouched = true);
+                                      _viewModel.onPasswordChanged();
+                                    },
+                                  ),
                                 ),
                               ],
                             ),
@@ -221,11 +262,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               child: TermsAndSubmitSection(
                                 agreedToTerms: _agreedToTerms,
                                 canSubmit: _canSubmit,
+                                isLoading: _viewModel.isSubmitting,
                                 onAgreementChanged: (value) {
+                                  if (_viewModel.isSubmitting) return;
                                   setState(() => _agreedToTerms = value);
                                 },
                                 onSubmit: _submit,
-                                onLogin: () => context.go('/home'),
+                                onLogin: () {
+                                  if (!_viewModel.isSubmitting) {
+                                    context.go('/home');
+                                  }
+                                },
                               ),
                             ),
                           ],
@@ -303,6 +350,7 @@ class RegisterFields extends StatelessWidget {
     this.emailMessage,
     this.nicknameAvailable,
     this.emailAvailable,
+    this.passwordErrorText,
   });
 
   final TextEditingController nicknameController;
@@ -327,6 +375,7 @@ class RegisterFields extends StatelessWidget {
   final String? emailMessage;
   final bool? nicknameAvailable;
   final bool? emailAvailable;
+  final String? passwordErrorText;
 
   @override
   Widget build(BuildContext context) {
@@ -371,6 +420,7 @@ class RegisterFields extends StatelessWidget {
           isPassword: true,
           textInputAction: TextInputAction.done,
           validator: passwordError,
+          errorText: passwordErrorText,
           showValidation: passwordShowsValidation,
           onChanged: onPasswordChanged,
           onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
@@ -472,6 +522,7 @@ class TermsAndSubmitSection extends StatelessWidget {
     required this.onAgreementChanged,
     required this.onSubmit,
     required this.onLogin,
+    this.isLoading = false,
   });
 
   final bool agreedToTerms;
@@ -479,6 +530,7 @@ class TermsAndSubmitSection extends StatelessWidget {
   final ValueChanged<bool> onAgreementChanged;
   final VoidCallback onSubmit;
   final VoidCallback onLogin;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -526,6 +578,7 @@ class TermsAndSubmitSection extends StatelessWidget {
         MovieLogButton(
           key: const Key('registerButton'),
           label: '가입하기',
+          isLoading: isLoading,
           fontSize: 14,
           width: double.infinity,
           disabledColor: Week6Style.disabled,
@@ -591,5 +644,11 @@ String? _passwordError(String? value) {
   final password = value ?? '';
   if (password.isEmpty) return '비밀번호를 입력해주세요.';
   if (password.length < 8) return '비밀번호는 8자 이상이어야 합니다.';
+  if (!RegExp(r'[a-z]').hasMatch(password) ||
+      !RegExp(r'[A-Z]').hasMatch(password) ||
+      !RegExp(r'[0-9]').hasMatch(password) ||
+      !RegExp(r'[!@#$%^&*]').hasMatch(password)) {
+    return '대문자·소문자·숫자·특수문자(!@#\$%^&*)를 포함해 주세요.';
+  }
   return null;
 }
