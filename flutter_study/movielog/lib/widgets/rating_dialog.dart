@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import '../common/movie_rating_input.dart';
 import '../data/models/rating_request.dart';
 import '../data/services/rating_api_service.dart';
+import '../core/session/auth_session.dart';
 import 'movielog_button.dart';
+import 'week8_ui.dart';
+import '../theme/week6_style.dart';
 
 class RatingDialog extends StatefulWidget {
   const RatingDialog({
@@ -46,6 +49,13 @@ class _RatingDialogState extends State<RatingDialog> {
       if (mounted) Navigator.pop(context, true);
     } catch (error) {
       if (!mounted) return;
+      if (error is DioException &&
+          {'RATING409_1', 'MEMBER404_1'}.contains(errorCode(error))) {
+        Navigator.pop(context, false);
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(writeErrorMessage(error))));
+        return;
+      }
       final message = error is DioException
           ? writeErrorMessage(error)
           : error is StateError
@@ -63,49 +73,114 @@ class _RatingDialogState extends State<RatingDialog> {
   @override
   Widget build(BuildContext context) => PopScope(
     canPop: !_saving,
-    child: AlertDialog(
-      title: Text(widget.initialScore > 0 ? '평점을 수정해주세요' : '평점을 남겨주세요'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            MovieRatingInput(
-              rating: _score.toDouble(),
-              allowHalfRating: false,
-              enabled: !_saving,
-              onChanged: (value) =>
-                  setState(() => _score = validateServerScore(value)),
+    child: Dialog(
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 340),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 32, 16, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  widget.initialScore > 0 ? '평점을 수정해주세요' : '평점을 남겨주세요',
+                  textAlign: TextAlign.center,
+                  style: Week6Style.text(20, 28, weight: FontWeight.w700),
+                ),
+                const SizedBox(height: 16),
+                Center(
+                  child: MovieRatingInput(
+                    rating: _score.toDouble(),
+                    itemSize: 36,
+                    allowHalfRating: false,
+                    enabled: !_saving,
+                    onChanged: (value) =>
+                        setState(() => _score = validateServerScore(value)),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  '코멘트 (선택, 최대 500자)',
+                  style: Week6Style.text(12, 18, color: Week6Style.body),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  key: const Key('ratingCommentField'),
+                  controller: _comment,
+                  enabled: !_saving,
+                  maxLength: 500,
+                  minLines: 4,
+                  maxLines: 5,
+                  style: Week6Style.text(13, 20, color: Week6Style.body),
+                  decoration: Week8Ui.input(hint: '이 영화의 인상적인 장면은…').copyWith(
+                    fillColor: const Color(0xFFFAF7FC),
+                    counterText: '',
+                  ),
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    _error!,
+                    style: Week6Style.text(
+                      12,
+                      18,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 32),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 44,
+                        child: TextButton(
+                          style: TextButton.styleFrom(
+                            backgroundColor: const Color(0xFFF0EAF8),
+                            foregroundColor: Week6Style.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                          ),
+                          onPressed: _saving
+                              ? null
+                              : () => Navigator.pop(context, false),
+                          child: Text(
+                            '취소',
+                            style: Week6Style.text(
+                              14,
+                              20,
+                              color: Week6Style.primary,
+                              weight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: MovieLogButton(
+                        key: const Key('ratingConfirmButton'),
+                        label: '확인',
+                        borderRadius: 24,
+                        disabledColor: Week6Style.disabled,
+                        fontSize: 14,
+                        isLoading: _saving,
+                        onPressed: _score > 0 && !_saving ? _save : null,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            TextField(
-              key: const Key('ratingCommentField'),
-              controller: _comment,
-              enabled: !_saving,
-              maxLength: 500,
-              minLines: 2,
-              maxLines: 3,
-              decoration: const InputDecoration(hintText: '코멘트를 남겨보세요 (선택)'),
-            ),
-            if (_error != null)
-              Text(
-                _error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-          ],
+          ),
         ),
       ),
-      actions: [
-        MovieLogButton(
-          label: '취소',
-          onPressed: _saving ? null : () => Navigator.pop(context, false),
-        ),
-        MovieLogButton(
-          key: const Key('ratingConfirmButton'),
-          label: '확인',
-          isLoading: _saving,
-          onPressed: _score > 0 && !_saving ? _save : null,
-        ),
-      ],
     ),
   );
 }

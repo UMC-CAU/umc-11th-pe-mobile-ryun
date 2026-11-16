@@ -5,5 +5,6 @@ Dio createMovieLogClient() => Dio(
     baseUrl: 'https://workbook.devnoco.com',
     connectTimeout: const Duration(seconds: 10),
     receiveTimeout: const Duration(seconds: 10),
+    followRedirects: false,
   ),
 );

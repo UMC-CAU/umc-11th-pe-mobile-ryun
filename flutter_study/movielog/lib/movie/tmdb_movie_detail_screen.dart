@@ -7,7 +7,7 @@ import '../widgets/tmdb_poster_image.dart';
 import '../widgets/rating_dialog.dart';
 import '../view_models/movie_detail_view_model.dart';
 import '../view_models/sign_up_view_model.dart';
-import '../view_models/learning_member_session.dart';
+import '../core/session/auth_session.dart';
 
 class TmdbMovieDetailScreen extends StatefulWidget {
   const TmdbMovieDetailScreen({super.key, required this.movie});
@@ -18,10 +18,10 @@ class TmdbMovieDetailScreen extends StatefulWidget {
 }
 
 class _TmdbMovieDetailScreenState extends State<TmdbMovieDetailScreen> {
-  bool _favorite = false;
-
   Future<void> _openRating() async {
     final model = context.read<MovieDetailViewModel>();
+    final session = context.read<AuthSession>();
+    final version = session.generation;
     final saved = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -34,17 +34,17 @@ class _TmdbMovieDetailScreenState extends State<TmdbMovieDetailScreen> {
         },
       ),
     );
+    if (!mounted || !session.current(version)) return;
     if (!mounted || saved != true) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('평점을 등록했습니다. 마이페이지에서 확인해 주세요.')),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('평점을 저장했습니다.')));
   }
 
   @override
   Widget build(BuildContext context) {
     final movie = widget.movie;
     final releaseDate = movie.releaseDate;
-    final memberId = context.watch<LearningMemberSession>().memberId;
+    final loggedIn = context.watch<AuthSession>().authenticated;
     return Scaffold(
       appBar: AppBar(title: Text(movie.title)),
       body: ListView(
@@ -76,23 +76,16 @@ class _TmdbMovieDetailScreenState extends State<TmdbMovieDetailScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (memberId == null)
+            if (!loggedIn)
               TextButton(
-                onPressed: () => context.push('/register'),
-                child: const Text('평점을 남기려면 학습용 회원가입을 완료해 주세요.'),
+                onPressed: () => context.push('/login'),
+                child: const Text('평점을 남기려면 로그인해 주세요.'),
               ),
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => setState(() => _favorite = !_favorite),
-                    child: Text(_favorite ? '즐겨찾기 해제' : '즐겨찾기'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
                   child: FilledButton(
-                    onPressed: memberId == null ? null : _openRating,
+                    onPressed: loggedIn ? _openRating : null,
                     child: const Text('평점 남기기'),
                   ),
                 ),

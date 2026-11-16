@@ -2,17 +2,49 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app_colors.dart';
+import 'week6_style.dart';
 
 abstract final class AppTheme {
   static final light = ThemeData(
     useMaterial3: true,
     fontFamily: 'Manrope',
-    scaffoldBackgroundColor: AppColors.surface,
+    scaffoldBackgroundColor: Week6Style.background,
     colorScheme: const ColorScheme.light(
       primary: AppColors.primary,
       surface: AppColors.surface,
       onSurface: AppColors.black,
       primaryContainer: AppColors.primaryContainer,
+      secondaryContainer: Week6Style.navigationIndicator,
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: Week6Style.primary,
+        foregroundColor: Colors.white,
+        disabledBackgroundColor: Week6Style.loading,
+        disabledForegroundColor: Colors.white,
+        minimumSize: const Size(0, 44),
+        elevation: 0,
+        textStyle: Week6Style.text(15, 20, weight: FontWeight.w700),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: Week6Style.primary,
+        textStyle: Week6Style.text(14, 20, weight: FontWeight.w700),
+      ),
+    ),
+    progressIndicatorTheme: const ProgressIndicatorThemeData(
+      color: Week6Style.primary,
+    ),
+    checkboxTheme: CheckboxThemeData(
+      fillColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.selected)
+            ? Week6Style.primary
+            : Colors.transparent,
+      ),
+      side: const BorderSide(color: Week6Style.primary, width: 2),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(3)),
     ),
     textTheme: const TextTheme(
       headlineSmall: TextStyle(

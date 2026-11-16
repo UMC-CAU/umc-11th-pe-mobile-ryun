@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import '../data/models/tmdb_movie_dto.dart';
 import '../data/services/tmdb_movie_service.dart';
 import '../data/services/rating_api_service.dart';
-import '../view_models/learning_member_session.dart';
 import '../view_models/movie_detail_view_model.dart';
+import '../core/session/auth_session.dart';
 import 'tmdb_movie_detail_screen.dart';
 
 class MovieDetailLoader extends StatefulWidget {
@@ -50,14 +50,19 @@ class _MovieDetailLoaderState extends State<MovieDetailLoader> {
       if (movie == null) {
         return const Scaffold(body: Center(child: CircularProgressIndicator()));
       }
-      final memberId = context.watch<LearningMemberSession>().memberId;
-      return ChangeNotifierProvider(
-        key: ValueKey('${movie.id}:$memberId'),
-        create: (context) => MovieDetailViewModel(
-          context.read<RatingApiService>(),
-          memberId,
-          movie,
-        ),
+      final session = context.watch<AuthSession>();
+      final memberId = session.authenticated ? 0 : null;
+      return MultiProvider(
+        key: ValueKey('${movie.id}:${session.email}:${session.generation}'),
+        providers: [
+          ChangeNotifierProvider(
+            create: (context) => MovieDetailViewModel(
+              context.read<RatingApiService>(),
+              memberId,
+              movie,
+            ),
+          ),
+        ],
         child: TmdbMovieDetailScreen(movie: movie),
       );
     },

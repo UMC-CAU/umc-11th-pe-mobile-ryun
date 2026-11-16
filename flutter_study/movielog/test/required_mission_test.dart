@@ -10,12 +10,16 @@ import 'package:movielog/register_screen.dart';
 import 'package:movielog/router/app_router.dart';
 
 import 'support/tmdb_test_service.dart';
+import 'support/auth_test_session.dart';
 
 void main() {
-  testWidgets('TMDB 홈, 장르 목록, 상세 연결, 가입 전 평점 제한 및 탭 상태 유지', (tester) async {
+  testWidgets('TMDB 홈, 장르 목록, 상세 연결, 로그인 후 평점 활성화 및 탭 상태 유지', (tester) async {
     final service = TestTmdbService();
     AppRouter.router.go('/home');
-    await tester.pumpWidget(MovieLogApp(movieService: service));
+    final session = (await tester.runAsync(signedInTestSession))!;
+    await tester.pumpWidget(
+      MovieLogApp(movieService: service, authSession: session),
+    );
     await tester.pumpAndSettle();
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(service.popularCalls, 1);
@@ -40,14 +44,14 @@ void main() {
     final rateButton = tester.widget<FilledButton>(
       find.widgetWithText(FilledButton, '평점 남기기'),
     );
-    expect(rateButton.onPressed, isNull);
-    expect(find.text('평점을 남기려면 학습용 회원가입을 완료해 주세요.'), findsOneWidget);
+    expect(rateButton.onPressed, isNotNull);
+    expect(find.text('평점을 남기려면 로그인해 주세요.'), findsNothing);
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilterChip, '전체'));
     await tester.pumpAndSettle();
     expect(service.requests.last.genreIds, isNull);
-    await tester.tap(find.byIcon(Icons.home_outlined));
+    await tester.tap(find.text('홈').last);
     await tester.pumpAndSettle();
     expect(service.popularCalls, 1);
     expect(find.byType(HomeScreen), findsOneWidget);

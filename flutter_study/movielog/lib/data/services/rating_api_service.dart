@@ -1,14 +1,47 @@
 import 'package:dio/dio.dart';
 
+import '../../core/config/study_config.dart';
+
 import '../models/rating_dto.dart';
 import '../models/rating_request.dart';
 import '../models/common_response.dart';
 import 'sign_up_service.dart';
 
 class RatingApiService {
-  RatingApiService(this._dio);
+  RatingApiService(
+    this._dio, {
+    this.authenticated = false,
+    this.sessionVersion,
+    this.publicClient,
+  });
   final Dio _dio;
+  final Dio? publicClient;
+  Future<List<RatingDto>> fetchMemberRatings(int memberId) async {
+    final response = await (publicClient ?? _dio).get(
+      '/$workbookVersion/members/$memberId/ratings',
+    );
+    return (response.data as List)
+        .map((value) => RatingDto.fromJson(value as Map<String, dynamic>))
+        .toList();
+  }
+
+  final bool authenticated;
+  final int Function()? sessionVersion;
+  final List<RatingDto> _currentRatings = [];
+  int? _cacheVersion;
+  void _ensureCurrent() {
+    final version = sessionVersion?.call();
+    if (_cacheVersion != version) {
+      _currentRatings.clear();
+      _cacheVersion = version;
+    }
+  }
+
   Future<List<RatingDto>> fetchMyRatings(int memberId) async {
+    if (authenticated) {
+      _ensureCurrent();
+      return List.unmodifiable(_currentRatings);
+    }
     final response = await _dio.get('/v6/members/$memberId/ratings');
     return (response.data as List<dynamic>)
         .map((item) => RatingDto.fromJson(item as Map<String, dynamic>))
@@ -16,18 +49,22 @@ class RatingApiService {
   }
 
   Future<void> createRating({
-    required int memberId,
+    int memberId = 0,
     required CreateRatingRequest request,
   }) async {
+    final version = sessionVersion?.call();
     final response = await _dio.post(
-      '/v6/members/$memberId/ratings',
+      authenticated
+          ? '/$workbookVersion/ratings'
+          : '/v6/members/$memberId/ratings',
       data: request.toJson(),
     );
     _checkWrite(response, 201);
+    if (authenticated && version == sessionVersion?.call()) _remember(response);
   }
 
   Future<void> updateRating({
-    required int memberId,
+    int memberId = 0,
     required int ratingId,
     required int score,
     String? comment,
@@ -36,26 +73,54 @@ class RatingApiService {
     if ((comment?.trim().length ?? 0) > 500) {
       throw ArgumentError('코멘트는 500자 이하입니다.');
     }
+    final version = sessionVersion?.call();
     final response = await _dio.patch(
-      '/v6/members/$memberId/ratings/$ratingId',
+      authenticated
+          ? '/$workbookVersion/ratings/$ratingId'
+          : '/v6/members/$memberId/ratings/$ratingId',
       data: {
         'score': score,
         'comment': comment?.trim().isEmpty == true ? null : comment?.trim(),
       },
     );
     _checkWrite(response, 200);
+    if (authenticated && version == sessionVersion?.call()) _remember(response);
   }
 
-  Future<void> deleteRating({
-    required int memberId,
-    required int ratingId,
-  }) async {
+  Future<void> deleteRating({int memberId = 0, required int ratingId}) async {
+    final version = sessionVersion?.call();
     final response = await _dio.delete(
-      '/v6/members/$memberId/ratings/$ratingId',
+      authenticated
+          ? '/$workbookVersion/ratings/$ratingId'
+          : '/v6/members/$memberId/ratings/$ratingId',
     );
     // A successful 204 has no JSON body.
-    if (response.statusCode != 204) throw StateError('삭제 응답 계약 오류');
+    if (response.statusCode != (authenticated ? 200 : 204)) {
+      throw StateError('삭제 응답 계약 오류');
+    }
+    if (authenticated) {
+      _checkWrite(response, 200);
+      if ((response.data as Map<String, dynamic>)['result'] != null) {
+        throw StateError('삭제 result는 null이어야 합니다.');
+      }
+    }
+    if (authenticated && version == sessionVersion?.call()) {
+      _ensureCurrent();
+      _currentRatings.removeWhere((rating) => rating.ratingId == ratingId);
+    }
   }
+
+  void rememberRating(RatingDto rating) {
+    _ensureCurrent();
+    _currentRatings.removeWhere((item) => item.ratingId == rating.ratingId);
+    _currentRatings.insert(0, rating);
+  }
+
+  void _remember(Response<dynamic> response) => rememberRating(
+    RatingDto.fromJson(
+      (response.data as Map<String, dynamic>)['result'] as Map<String, dynamic>,
+    ),
+  );
 
   void _checkWrite(Response<dynamic> response, int status) {
     if (response.statusCode != status) throw StateError('평점 응답 계약 오류');

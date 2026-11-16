@@ -1,6 +1,6 @@
 # MovieLog
 
-Flutter 영화 기록 앱입니다. TMDB 영화 목록과 MovieLog 워크북 v6 API를 MVVM·Provider로 연결합니다.
+Flutter 영화 기록 앱입니다. TMDB 영화 목록과 MovieLog 워크북 v7 JWT API를 MVVM·Provider로 연결합니다.
 
 ## 주요 기능
 
@@ -71,3 +71,29 @@ flutter test --dart-define=dart.vm.product=true test/tmdb_logging_mode_test.dart
 - [워크북 Swagger](https://workbook.devnoco.com/docs)의 v6 명세를 사용합니다. MovieLog API 요청에는 TMDB 토큰이 포함되지 않습니다.
 
 7주차 학습 정리, 제출용 A·B 문서, Android 화면과 검증 결과는 로컬 `docs/week7/`에 보관합니다.
+
+
+## 8주차 — JWT 로그인·세션 복원·프로필
+
+이 브랜치는 8주차 v7 API를 기본으로 실행합니다. 9주차 검색·즐겨찾기·통합 저장 코드는 포함하지 않습니다.
+
+- 신규 로그인: 로그인 응답 확인 → secure storage 저장 → 홈 진입 → MainScreen.loadMember()의 GET me.
+- 앱 재시작: 저장 토큰 읽기 → GET me 검증 성공 후 로그인 확정. 연결 실패는 토큰을 보존하고 재시도합니다.
+- 보호 Client는 지정 HTTPS 호스트의 /v7/members/me와 /v7/ratings에만 JWT를 붙입니다. TMDB Token은 별도 Client에서만 사용합니다.
+- 마이페이지 내 정보·가입일, 이메일 읽기 전용 및 닉네임 수정, 2~12자·중복·연결 실패 처리.
+- 현재 세션에서 받은 Rating의 수정·삭제, 로그아웃·만료 안내·이전 세션 응답 차단.
+- Challenge: 이메일만 일반 저장소에 보관, 내 정보 전체 로딩·오류 재시도, 변경 이탈 확인.
+- Figma 프레임 기준 로그인·Splash·프로필·평점 Dialog 디자인을 적용했습니다. API가 제공하지 않는 통계는 —로 표시합니다.
+
+v7 로그인/GET me에는 memberId가 없고 토큰 기반 내 전체 평점 GET도 없습니다. JWT claim을 추측하지 않고 현재 세션의 등록 응답만 수정·삭제하며, 재시작 뒤 전체 내 평점 복원을 완료 기능으로 표시하지 않습니다.
+
+```bash
+flutter pub get
+flutter run
+flutter analyze
+flutter test
+```
+
+Android 실제 API 검증 및 capture 로그·사진·영상은 기존 정책대로 로컬 docs/week8/에 보관합니다. .env·토큰·비밀번호·생성 계정 정보는 커밋하지 않습니다.
+
+최종 항목별 구현·검증 결과와 직접 수동 검증 여부는 [8주차 체크리스트](WEEK8_CHECKLIST.md)에서 확인합니다.

@@ -19,17 +19,6 @@ class HomeScreen extends StatelessWidget {
         appBar: AppBar(
           automaticallyImplyLeading: false,
           title: const Text('MovieLog'),
-          actions: [
-            IconButton(
-              tooltip: '검색',
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('검색 기능은 준비 중입니다.')),
-                );
-              },
-              icon: const Icon(Icons.search),
-            ),
-          ],
         ),
         body: Consumer<MovieHomeViewModel>(
           builder: (context, vm, child) {
