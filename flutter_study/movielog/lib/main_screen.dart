@@ -1,24 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import 'theme/week6_style.dart';
 
-class MainScreen extends StatelessWidget {
+import 'package:provider/provider.dart';
+
+import 'core/session/auth_session.dart';
+
+class MainScreen extends StatefulWidget {
   const MainScreen({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
+  @override
+  State<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<AuthSession>().loadMember();
+    });
+  }
+
   void _onDestinationSelected(int index) {
-    navigationShell.goBranch(
+    widget.navigationShell.goBranch(
       index,
-      initialLocation: index == navigationShell.currentIndex,
+      initialLocation: index == widget.navigationShell.currentIndex,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: navigationShell,
+      body: widget.navigationShell,
       bottomNavigationBar: NavigationBarTheme(
         data: NavigationBarThemeData(
           height: 64,
@@ -46,24 +64,35 @@ class MainScreen extends StatelessWidget {
           ),
         ),
         child: NavigationBar(
-          selectedIndex: navigationShell.currentIndex,
+          selectedIndex: widget.navigationShell.currentIndex,
           onDestinationSelected: _onDestinationSelected,
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home_outlined),
-              label: '홈',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.calendar_today_outlined),
-              selectedIcon: Icon(Icons.calendar_today_outlined),
-              label: '영화',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.person_outline),
-              selectedIcon: Icon(Icons.person_outline),
-              label: '마이',
-            ),
+          destinations: [
+            for (final (asset, label) in [
+              ('home', '홈'),
+              ('movie', '영화'),
+              ('person', '마이'),
+            ])
+              NavigationDestination(
+                icon: SvgPicture.asset(
+                  'assets/icons/$asset.svg',
+                  width: 24,
+                  height: 24,
+                  colorFilter: const ColorFilter.mode(
+                    Week6Style.body,
+                    BlendMode.srcIn,
+                  ),
+                ),
+                selectedIcon: SvgPicture.asset(
+                  'assets/icons/$asset.svg',
+                  width: 24,
+                  height: 24,
+                  colorFilter: const ColorFilter.mode(
+                    Week6Style.primary,
+                    BlendMode.srcIn,
+                  ),
+                ),
+                label: label,
+              ),
           ],
         ),
       ),

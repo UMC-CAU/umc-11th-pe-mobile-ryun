@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import '../data/models/rating_dto.dart';
 import '../data/services/rating_api_service.dart';
 import '../view_models/learning_member_session.dart';
+import '../core/session/auth_session.dart';
 import '../widgets/rating_dialog.dart';
 import '../widgets/week6_app_bar.dart';
 import '../theme/week6_style.dart';
@@ -115,8 +116,9 @@ class _MyRatingsScreenState extends State<MyRatingsScreen> {
   @override
   Widget build(BuildContext context) {
     final model = context.watch<MyRatingsViewModel>();
-    final isOwner =
-        context.watch<LearningMemberSession?>()?.memberId == model.memberId;
+    final isOwner = context.read<RatingApiService>().authenticated
+        ? (context.watch<AuthSession?>()?.authenticated ?? false)
+        : context.watch<LearningMemberSession?>()?.memberId == model.memberId;
     return PopScope(
       canPop: !model.isWriting && !_deletingSelection,
       child: Stack(
@@ -151,6 +153,13 @@ class _MyRatingsScreenState extends State<MyRatingsScreen> {
             body: Consumer<MyRatingsViewModel>(
               builder: (context, model, _) => Column(
                 children: [
+                  if (context.read<RatingApiService>().authenticated)
+                    const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: Text(
+                        '현재 로그인 세션에서 저장한 평점입니다. 서버는 내 전체 평점 조회 API를 제공하지 않습니다.',
+                      ),
+                    ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Row(
@@ -159,6 +168,8 @@ class _MyRatingsScreenState extends State<MyRatingsScreen> {
                         Text(
                           _editing
                               ? '${_selection.length}개 선택'
+                              : context.read<RatingApiService>().authenticated
+                              ? '현재 세션의 평점'
                               : '학습용 회원 ${model.memberId}의 평점',
                         ),
                         if (isOwner &&
@@ -350,6 +361,14 @@ class _MyRatingsScreenState extends State<MyRatingsScreen> {
                                                       model,
                                                       rating,
                                                     ),
+                                              style: TextButton.styleFrom(
+                                                backgroundColor: const Color(
+                                                  0xFFF0EAF8,
+                                                ),
+                                                foregroundColor:
+                                                    Week6Style.primary,
+                                                minimumSize: const Size(64, 32),
+                                              ),
                                               child: const Text('수정'),
                                             ),
                                             TextButton(
@@ -360,6 +379,15 @@ class _MyRatingsScreenState extends State<MyRatingsScreen> {
                                                       model,
                                                       rating,
                                                     ),
+                                              style: TextButton.styleFrom(
+                                                backgroundColor: const Color(
+                                                  0xFFFFF0F0,
+                                                ),
+                                                foregroundColor: const Color(
+                                                  0xFFBA1A1A,
+                                                ),
+                                                minimumSize: const Size(64, 32),
+                                              ),
                                               child: const Text('삭제'),
                                             ),
                                           ],

@@ -8,6 +8,7 @@ import 'package:movielog/movielog_app.dart';
 import 'package:movielog/router/app_router.dart';
 
 import 'support/tmdb_test_service.dart';
+import 'support/auth_test_session.dart';
 
 class _FirstRequestFails extends TestTmdbService {
   bool firstRequest = true;
@@ -24,7 +25,10 @@ class _FirstRequestFails extends TestTmdbService {
 void main() {
   testWidgets('TMDB Route에서 첫 오류 뒤 재시도하면 목록이 표시된다', (tester) async {
     AppRouter.router.go('/movies');
-    await tester.pumpWidget(MovieLogApp(movieService: _FirstRequestFails()));
+    final session = (await tester.runAsync(signedInTestSession))!;
+    await tester.pumpWidget(
+      MovieLogApp(movieService: _FirstRequestFails(), authSession: session),
+    );
     expect(find.byType(MovieListLoading), findsOneWidget);
     await tester.pumpAndSettle();
     expect(find.byType(MovieListError), findsOneWidget);

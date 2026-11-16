@@ -177,7 +177,7 @@ class _StartButton extends StatelessWidget {
         padding: EdgeInsets.fromLTRB(16 * scale, 0, 16 * scale, 24 * scale),
         child: ElevatedButton(
           onPressed: () {
-            context.go('/register');
+            context.go('/login');
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: _purple,

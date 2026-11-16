@@ -196,7 +196,7 @@ void main() {
     expect(editableText.focusNode.hasFocus, isFalse);
   });
 
-  testWidgets('가입 요청 중 이탈을 막고 성공 시 memberId를 저장한 뒤 영화 목록으로 이동한다', (
+  testWidgets('가입 요청 중 이탈을 막고 성공 시 memberId를 저장한 뒤 로그인으로 이동한다', (
     tester,
   ) async {
     final pending = Completer<(int, Object?)>();
@@ -229,8 +229,8 @@ void main() {
           builder: (_, _) => RegisterScreen(memberService: service),
         ),
         GoRoute(
-          path: '/movies',
-          builder: (_, _) => const Scaffold(body: Text('영화 테스트 화면')),
+          path: '/login',
+          builder: (_, _) => const Scaffold(body: Text('로그인 테스트 화면')),
         ),
       ],
     );
@@ -289,7 +289,7 @@ void main() {
     ));
     await tester.pumpAndSettle();
     expect(session.memberId, 42);
-    expect(find.text('영화 테스트 화면'), findsOneWidget);
+    expect(find.text('로그인 테스트 화면'), findsOneWidget);
     expect(find.byType(RegisterScreen), findsNothing);
   });
 }

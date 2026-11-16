@@ -11,16 +11,18 @@ abstract interface class MemberAvailabilityService {
 }
 
 class SignUpService implements MemberAvailabilityService {
-  SignUpService(this._dio);
+  SignUpService(this._dio, {this.version = 'v6'});
   final Dio _dio;
+  final String version;
 
   @override
-  Future<bool> checkNickname(String nickname) =>
-      _check('/v6/members/nickname/${Uri.encodeComponent(nickname.trim())}');
+  Future<bool> checkNickname(String nickname) => _check(
+    '/$version/members/nickname/${Uri.encodeComponent(nickname.trim())}',
+  );
 
   @override
   Future<bool> checkEmail(String email) =>
-      _check('/v6/members/email/${Uri.encodeComponent(email.trim())}');
+      _check('/$version/members/email/${Uri.encodeComponent(email.trim())}');
 
   Future<bool> _check(String path) async {
     final response = await _dio.get(path);
@@ -31,7 +33,10 @@ class SignUpService implements MemberAvailabilityService {
   Future<CommonResponse<SignUpResult>> signUp(
     CreateMemberRequest request,
   ) async {
-    final response = await _dio.post('/v6/members', data: request.toJson());
+    final response = await _dio.post(
+      '/$version/members',
+      data: request.toJson(),
+    );
     if (response.statusCode != 201) throw StateError('회원가입 응답 계약 오류');
     final common = CommonResponse<SignUpResult>.fromJson(
       response.data as Map<String, dynamic>,

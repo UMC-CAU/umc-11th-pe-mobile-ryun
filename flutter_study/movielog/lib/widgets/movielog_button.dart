@@ -11,6 +11,7 @@ class MovieLogButton extends StatelessWidget {
     this.width,
     this.disabledColor = Week6Style.loading,
     this.fontSize = 13,
+    this.borderRadius = 12,
   });
   final String label;
   final VoidCallback? onPressed;
@@ -18,6 +19,7 @@ class MovieLogButton extends StatelessWidget {
   final double? width;
   final Color disabledColor;
   final double fontSize;
+  final double borderRadius;
 
   @override
   Widget build(BuildContext context) => SizedBox(
@@ -39,7 +41,9 @@ class MovieLogButton extends StatelessWidget {
           fontSize + 5,
           weight: FontWeight.w700,
         ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(borderRadius),
+        ),
       ),
       child: isLoading
           ? const SizedBox(

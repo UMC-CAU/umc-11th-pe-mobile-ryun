@@ -127,10 +127,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _viewModel.createdMemberId!,
       );
       _passwordController.clear();
-      context.go('/movies');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('회원가입을 완료했습니다. 영화에 평점을 남겨보세요.')),
-      );
+      context.go('/login');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('회원가입을 완료했습니다. 로그인해 주세요.')));
     } else if (_viewModel.snackbarMessage != null) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(_viewModel.snackbarMessage!)));
@@ -270,7 +270,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 onSubmit: _submit,
                                 onLogin: () {
                                   if (!_viewModel.isSubmitting) {
-                                    context.go('/home');
+                                    context.go('/login');
                                   }
                                 },
                               ),
