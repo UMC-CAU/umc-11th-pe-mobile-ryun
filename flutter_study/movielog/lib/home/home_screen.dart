@@ -7,6 +7,7 @@ import '../movie/widgets/tmdb_movie_card.dart';
 import '../view_models/movie_home_view_model.dart';
 import '../widgets/tmdb_poster_image.dart';
 import '../theme/app_colors.dart';
+import '../core/config/study_config.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -19,6 +20,18 @@ class HomeScreen extends StatelessWidget {
         appBar: AppBar(
           automaticallyImplyLeading: false,
           title: const Text('MovieLog'),
+          actions: [
+            if (!week8)
+              IconButton(
+                tooltip: '검색',
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('검색 기능은 준비 중입니다.')),
+                  );
+                },
+                icon: const Icon(Icons.search),
+              ),
+          ],
         ),
         body: Consumer<MovieHomeViewModel>(
           builder: (context, vm, child) {

@@ -1,11 +1,11 @@
 # MovieLog
 
-Flutter 영화 기록 앱입니다. TMDB 영화 목록과 MovieLog 워크북 v7 JWT API를 MVVM·Provider로 연결합니다.
+Flutter 영화 기록 앱입니다. TMDB 영화 정보와 MovieLog 워크북 v8 JWT API를 MVVM·Provider로 연결합니다.
 
 ## 주요 기능
 
 - 홈 인기 영화 최대 5개 표시
-- Discover 영화 최대 30개 조회 및 TMDB ID 중복 제거
+- Discover 영화 페이지네이션 및 TMDB ID 중복 제거
 - 장르 다중 선택 및 OR 조건 조회
 - 기존 목록을 유지하는 Pull to Refresh
 - 요청 실패 Dialog, 같은 장르 조건 재시도, 포스터 대체 표시
@@ -24,7 +24,7 @@ flutter run
 
 `.env`는 Flutter asset으로 사용되지만 Git에서는 제외합니다.
 실제 토큰이 없는 `.env.example`만 공유합니다.
-TMDB 영화의 평점은 MovieLog v6에 저장하고, 즐겨찾기는 화면 상태로 관리합니다.
+TMDB 영화의 평점과 즐겨찾기는 MovieLog v8에 저장합니다.
 
 ## 검증
 
@@ -72,28 +72,36 @@ flutter test --dart-define=dart.vm.product=true test/tmdb_logging_mode_test.dart
 
 7주차 학습 정리, 제출용 A·B 문서, Android 화면과 검증 결과는 로컬 `docs/week7/`에 보관합니다.
 
+## 9주차 — v8 즐겨찾기·검색·페이지네이션
 
-## 8주차 — JWT 로그인·세션 복원·프로필
+2026-11-19에 첨부 워크북과 기존 작업을 다시 확인하고 최신 Figma UI를 적용했습니다. 개념·Guided A/B·Required A~D·Challenge A~C 각각의 작업 내용, 문제와 해결, 코드·결과 캡처는 로컬 `docs/week9/refresh-2026-11-19/README.md`에서 확인합니다.
 
-이 브랜치는 8주차 v7 API를 기본으로 실행합니다. 9주차 검색·즐겨찾기·통합 저장 코드는 포함하지 않습니다.
+- JWT 로그인과 보안 저장소 세션 복원을 사용합니다. 보호용 MovieLog Client는 지정 호스트의 v8 보호 API에만 JWT를 붙입니다.
+- 영화 상세의 북마크로 즐겨찾기를 등록·해제하고, 마이페이지의 내 즐겨찾기에서 TMDB 영화 정보를 함께 표시합니다. 상세에서 돌아오면 목록을 다시 조회합니다.
+- 영화 목록은 첫 페이지부터 시작하며 하단에 가까워지면 다음 페이지를 불러옵니다. 실패 시 기존 카드를 유지하고 같은 페이지를 수동 재시도합니다.
+- 영화 검색은 별도 화면·상태를 사용하며 제출 또는 입력 후 500ms에 검색합니다. 장르·검색 변경과 계정 전환 뒤 늦은 응답은 반영하지 않습니다.
+- 평점 Dialog의 선택 체크박스로 평점·즐겨찾기를 `/v8/movie-records`에서 한 번에 저장합니다. 이미 즐겨찾기한 영화는 `/v8/ratings`로 평점만 저장합니다.
+- v8에는 인증된 사용자의 전체 평점 GET이 없습니다. 평점 화면은 현재 로그인 세션에서 저장한 응답을 표시하며 재로그인·앱 재시작 뒤에는 비워집니다. JWT를 해석해 memberId를 추측하지 않습니다.
 
-- 신규 로그인: 로그인 응답 확인 → secure storage 저장 → 홈 진입 → MainScreen.loadMember()의 GET me.
-- 앱 재시작: 저장 토큰 읽기 → GET me 검증 성공 후 로그인 확정. 연결 실패는 토큰을 보존하고 재시도합니다.
-- 보호 Client는 지정 HTTPS 호스트의 /v7/members/me와 /v7/ratings에만 JWT를 붙입니다. TMDB Token은 별도 Client에서만 사용합니다.
-- 마이페이지 내 정보·가입일, 이메일 읽기 전용 및 닉네임 수정, 2~12자·중복·연결 실패 처리.
-- 현재 세션에서 받은 Rating의 수정·삭제, 로그아웃·만료 안내·이전 세션 응답 차단.
-- Challenge: 이메일만 일반 저장소에 보관, 내 정보 전체 로딩·오류 재시도, 변경 이탈 확인.
-- Figma 프레임 기준 로그인·Splash·프로필·평점 Dialog 디자인을 적용했습니다. API가 제공하지 않는 통계는 —로 표시합니다.
-
-v7 로그인/GET me에는 memberId가 없고 토큰 기반 내 전체 평점 GET도 없습니다. JWT claim을 추측하지 않고 현재 세션의 등록 응답만 수정·삭제하며, 재시작 뒤 전체 내 평점 복원을 완료 기능으로 표시하지 않습니다.
+기본 실행은 Challenge 기능을 포함합니다. Required의 제출 검색·더 보기 화면은 다음 명령으로 실행할 수 있습니다.
 
 ```bash
-flutter pub get
-flutter run
-flutter analyze
-flutter test
+flutter run --dart-define=WEEK9_CHALLENGE=false
 ```
 
-Android 실제 API 검증 및 capture 로그·사진·영상은 기존 정책대로 로컬 docs/week8/에 보관합니다. .env·토큰·비밀번호·생성 계정 정보는 커밋하지 않습니다.
+학습 순서, 작업 내용·애로사항·해결 방법과 Android 캡처는 로컬 `docs/week9/practice-record.md`에 정리합니다. 이전 v6 서비스의 기본값은 기존 주차 단위 테스트용으로 유지하고 실제 앱에서는 v8 구성을 주입합니다.
+## 8주차 — v7 인증·프로필·세션
 
-최종 항목별 구현·검증 결과와 직접 수동 검증 여부는 [8주차 체크리스트](WEEK8_CHECKLIST.md)에서 확인합니다.
+8주차 화면은 아래 명령으로 실행합니다.
+
+```bash
+flutter run --dart-define=STUDY_WEEK=8
+```
+
+- v7 JWT 로그인, Android secure storage, GET me 검증 뒤 세션 복원과 실패 재시도
+- 내 정보·가입일, 닉네임 수정(2~12자·409·네트워크 재시도), 변경 이탈 확인
+- 현재 로그인 세션의 v7 평점 등록·수정·삭제, 만료 안내, 로그아웃 및 보호 화면 차단
+- 이메일 저장 체크박스(SharedPreferences에는 이메일만 저장)
+- 8주차 실행에서는 검색·즐겨찾기·북마크·통합 저장을 제외합니다. 기본 실행은 9주차 v8입니다.
+
+학습 정리와 Android 인증 자료는 로컬 `docs/week8/practice-record.md` 및 `study-certification-checklist.md`에서 확인합니다. `docs/`는 기존 Git 제외 정책을 유지합니다.

@@ -7,6 +7,7 @@ import 'core/config/study_config.dart';
 import 'core/network/movie_log_client.dart';
 import 'core/network/auth_interceptor.dart';
 import 'core/session/auth_session.dart';
+import 'data/services/favorite_api_service.dart';
 import 'data/services/member_check_service.dart';
 import 'data/services/sign_up_service.dart';
 import 'view_models/learning_member_session.dart';
@@ -25,6 +26,7 @@ class MovieLogApp extends StatelessWidget {
     this.ratingApiService,
     this.signUpService,
     this.authSession,
+    this.favoriteApi,
     this.profileClient,
   });
 
@@ -33,6 +35,7 @@ class MovieLogApp extends StatelessWidget {
   final RatingApiService? ratingApiService;
   final SignUpService? signUpService;
   final AuthSession? authSession;
+  final FavoriteApi? favoriteApi;
   final Dio? profileClient;
 
   @override
@@ -82,6 +85,11 @@ class MovieLogApp extends StatelessWidget {
                 publicClient: context.read<_PublicClient>().dio,
                 sessionVersion: () => context.read<AuthSession>().generation,
               ),
+        ),
+        Provider<FavoriteApi>(
+          create: (context) =>
+              favoriteApi ??
+              FavoriteApiService(context.read<_WorkbookClient>().dio),
         ),
         Provider<Dio>(
           create: (_) => createTmdbClient(),

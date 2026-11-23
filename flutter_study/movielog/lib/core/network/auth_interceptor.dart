@@ -12,7 +12,11 @@ class AuthInterceptor extends Interceptor {
         uri.host == 'workbook.devnoco.com' &&
         uri.port == 443 &&
         (uri.path == '/$workbookVersion/members/me' ||
-            RegExp(r'^/v7/ratings(/|$)').hasMatch(uri.path));
+            RegExp(
+              week8
+                  ? r'^/v7/ratings(/|$)'
+                  : r'^/v8/(favorites|ratings|movie-records)(/|$)',
+            ).hasMatch(uri.path));
   }
 
   @override

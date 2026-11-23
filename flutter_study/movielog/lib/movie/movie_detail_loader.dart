@@ -4,8 +4,12 @@ import 'package:provider/provider.dart';
 import '../data/models/tmdb_movie_dto.dart';
 import '../data/services/tmdb_movie_service.dart';
 import '../data/services/rating_api_service.dart';
+import '../view_models/learning_member_session.dart';
 import '../view_models/movie_detail_view_model.dart';
 import '../core/session/auth_session.dart';
+import '../core/config/study_config.dart';
+import '../data/services/favorite_api_service.dart';
+import '../view_models/favorite_detail_view_model.dart';
 import 'tmdb_movie_detail_screen.dart';
 
 class MovieDetailLoader extends StatefulWidget {
@@ -51,7 +55,9 @@ class _MovieDetailLoaderState extends State<MovieDetailLoader> {
         return const Scaffold(body: Center(child: CircularProgressIndicator()));
       }
       final session = context.watch<AuthSession>();
-      final memberId = session.authenticated ? 0 : null;
+      final memberId = session.authenticated
+          ? (context.watch<LearningMemberSession>().memberId ?? 0)
+          : null;
       return MultiProvider(
         key: ValueKey('${movie.id}:${session.email}:${session.generation}'),
         providers: [
@@ -61,6 +67,17 @@ class _MovieDetailLoaderState extends State<MovieDetailLoader> {
               memberId,
               movie,
             ),
+          ),
+          ChangeNotifierProvider(
+            create: (context) {
+              final vm = FavoriteDetailViewModel(
+                context.read<FavoriteApi>(),
+                session,
+                movie.id,
+              );
+              if (!week8) vm.load();
+              return vm;
+            },
           ),
         ],
         child: TmdbMovieDetailScreen(movie: movie),
