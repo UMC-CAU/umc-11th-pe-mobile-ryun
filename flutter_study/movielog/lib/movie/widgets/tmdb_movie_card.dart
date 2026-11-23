@@ -3,16 +3,35 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/models/tmdb_movie_dto.dart';
 import '../../widgets/tmdb_poster_image.dart';
+import 'movie_list_card.dart';
 
 class TmdbMovieCard extends StatelessWidget {
-  const TmdbMovieCard({super.key, required this.movie, this.rank});
+  const TmdbMovieCard({
+    super.key,
+    required this.movie,
+    this.rank,
+    this.onTap,
+    this.horizontal = false,
+    this.isFavorite = false,
+  });
+  final bool horizontal;
+  final bool isFavorite;
+  final VoidCallback? onTap;
   final TmdbMovieDto movie;
   final int? rank;
 
   @override
   Widget build(BuildContext context) {
+    if (horizontal) {
+      return MovieListCard(
+        movie: movie,
+        movieId: movie.id,
+        isFavorite: isFavorite,
+        onTap: onTap ?? () => context.push('/movies/${movie.id}', extra: movie),
+      );
+    }
     return InkWell(
-      onTap: () => context.push('/movies/${movie.id}', extra: movie),
+      onTap: onTap ?? () => context.push('/movies/${movie.id}', extra: movie),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

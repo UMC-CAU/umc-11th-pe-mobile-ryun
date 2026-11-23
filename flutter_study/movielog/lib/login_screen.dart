@@ -102,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
       if (!mounted) return;
       _password.clear();
-      context.go('/home');
+      context.go('/movies');
     } on DioException catch (error) {
       if (mounted) {
         setState(

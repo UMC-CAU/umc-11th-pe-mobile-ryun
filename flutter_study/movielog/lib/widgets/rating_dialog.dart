@@ -15,10 +15,15 @@ class RatingDialog extends StatefulWidget {
     this.initialScore = 0,
     this.initialComment,
     required this.onSubmit,
+    this.showAddToFavorite = false,
+    this.onSubmitWithFavorite,
   });
   final int initialScore;
   final String? initialComment;
   final Future<void> Function(int score, String? comment) onSubmit;
+  final bool showAddToFavorite;
+  final Future<void> Function(int score, String? comment, bool addToFavorites)?
+  onSubmitWithFavorite;
   @override
   State<RatingDialog> createState() => _RatingDialogState();
 }
@@ -30,6 +35,7 @@ class _RatingDialogState extends State<RatingDialog> {
   );
   bool _saving = false;
   String? _error;
+  bool _addToFavorites = false;
   @override
   void dispose() {
     _comment.dispose();
@@ -45,12 +51,24 @@ class _RatingDialogState extends State<RatingDialog> {
     try {
       final text = _comment.text.trim();
       if (text.length > 500) throw ArgumentError('코멘트는 500자 이하로 입력해 주세요.');
-      await widget.onSubmit(_score, text.isEmpty ? null : text);
+      if (widget.onSubmitWithFavorite case final submit?) {
+        await submit(
+          _score,
+          text.isEmpty ? null : text,
+          widget.showAddToFavorite && _addToFavorites,
+        );
+      } else {
+        await widget.onSubmit(_score, text.isEmpty ? null : text);
+      }
       if (mounted) Navigator.pop(context, true);
     } catch (error) {
       if (!mounted) return;
       if (error is DioException &&
-          {'RATING409_1', 'MEMBER404_1'}.contains(errorCode(error))) {
+          {
+            'RATING409_1',
+            'FAVORITE409_1',
+            'MEMBER404_1',
+          }.contains(errorCode(error))) {
         Navigator.pop(context, false);
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(writeErrorMessage(error))));
@@ -133,6 +151,18 @@ class _RatingDialogState extends State<RatingDialog> {
                     ),
                   ),
                 ],
+                if (widget.showAddToFavorite)
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    dense: true,
+                    title: const Text('즐겨찾기에도 추가'),
+                    value: _addToFavorites,
+                    onChanged: _saving
+                        ? null
+                        : (value) =>
+                              setState(() => _addToFavorites = value ?? false),
+                  ),
                 const SizedBox(height: 32),
                 Row(
                   children: [

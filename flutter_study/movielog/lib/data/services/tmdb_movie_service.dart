@@ -9,6 +9,23 @@ class TmdbMovieService {
 
   final Dio _dio;
 
+  Future<TmdbMoviePageDto> searchMovies({
+    required String query,
+    int page = 1,
+  }) async {
+    if (query.trim().isEmpty) throw ArgumentError('검색어가 비어 있습니다.');
+    final response = await _dio.get(
+      '/search/movie',
+      queryParameters: {
+        'query': query.trim(),
+        'page': page,
+        'language': 'ko-KR',
+        'include_adult': false,
+      },
+    );
+    return TmdbMoviePageDto.fromJson(response.data as Map<String, dynamic>);
+  }
+
   Future<TmdbMovieDto> fetchMovieDetail(int movieId) async {
     final response = await _dio.get(
       '/movie/$movieId',

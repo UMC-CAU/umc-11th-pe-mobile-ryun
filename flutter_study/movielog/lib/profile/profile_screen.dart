@@ -3,15 +3,31 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../core/session/auth_session.dart';
+import '../core/config/study_config.dart';
+
 import '../theme/week6_style.dart';
 import '../widgets/week8_ui.dart';
 import '../widgets/movielog_button.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
+
   @override
-  Widget build(BuildContext context) =>
-      _buildProfile(context, context.watch<AuthSession>());
+  Widget build(BuildContext context) {
+    final session = context.watch<AuthSession>();
+    if (!session.authenticated) {
+      return Scaffold(
+        appBar: Week8Ui.appBar('내 프로필', centered: false),
+        body: Center(
+          child: MovieLogButton(
+            label: '로그인',
+            onPressed: () => context.push('/login'),
+          ),
+        ),
+      );
+    }
+    return _buildProfile(context, session);
+  }
 
   Widget _buildProfile(BuildContext context, AuthSession session) => Scaffold(
     backgroundColor: Week6Style.background,
@@ -196,6 +212,48 @@ class ProfileScreen extends StatelessWidget {
                         ),
                       ),
                     ),
+                    if (!week8) ...[
+                      const SizedBox(height: 12),
+                      Material(
+                        color: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: const BorderSide(
+                            color: Week6Style.entryBorder,
+                            width: 1.5,
+                          ),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          onTap: () => context.push('/my/favorites'),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 18,
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    '내 즐겨찾기',
+                                    style: Week6Style.text(
+                                      17,
+                                      24,
+                                      weight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.chevron_right,
+                                  color: Week6Style.primary,
+                                  size: 28,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 26),
                     Text(
                       '선호하는 장르',
