@@ -105,3 +105,15 @@ flutter run --dart-define=STUDY_WEEK=8
 - 8주차 실행에서는 검색·즐겨찾기·북마크·통합 저장을 제외합니다. 기본 실행은 9주차 v8입니다.
 
 학습 정리와 Android 인증 자료는 로컬 `docs/week8/practice-record.md` 및 `study-certification-checklist.md`에서 확인합니다. `docs/`는 기존 Git 제외 정책을 유지합니다.
+
+
+## 10주차 — Android 릴리스와 앱 정보
+
+- MovieLog 표시명, 1.0.0+1 버전, dev.umc.movielog 식별자를 사용합니다.
+- flutter_launcher_icons / flutter_native_splash로 기존 MovieLog 로고를 사용하는 아이콘·네이티브 Splash를 생성합니다. 생성 도구는 dev_dependencies입니다.
+- 마이페이지 ⓘ → /my/about에서 설치된 앱의 버전과 공식 TMDB 로고·출처, 사용자 에셋 라이선스를 확인합니다.
+- Android release는 android/key.properties의 upload 키로 서명하며 debug 키로 대체하지 않습니다. key.properties와 keystore는 Git 제외 대상입니다. Windows의 한글 경로도 UTF-8로 읽습니다.
+- 개인 키를 준비한 뒤 flutter build apk --release 및 flutter build appbundle --release로 빌드합니다. 서명키가 없으면 로컬 android/key.properties를 먼저 구성해야 합니다.
+- APK: build/app/outputs/flutter-apk/app-release.apk / AAB: build/app/outputs/bundle/release/app-release.aab
+- .env는 Git 제외 대상이지만 앱 asset에 들어갑니다. APK를 공유하면 TMDB 읽기 토큰도 전달되므로 바이너리는 공개 저장소에 올리지 않습니다.
+- 학습 기록·캡처·영상·검증 로그는 로컬 docs/week10/에 보관합니다. Windows 환경에서 iOS 빌드/시뮬레이터 및 공개 스토어 배포는 검증 범위 밖입니다.

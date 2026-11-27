@@ -35,6 +35,11 @@ class ProfileScreen extends StatelessWidget {
       '내 프로필',
       centered: false,
       actions: [
+        IconButton(
+          tooltip: '앱 정보',
+          onPressed: () => context.push('/my/about'),
+          icon: const Icon(Icons.info_outline, color: Week6Style.primary),
+        ),
         TextButton(
           onPressed: () async {
             try {

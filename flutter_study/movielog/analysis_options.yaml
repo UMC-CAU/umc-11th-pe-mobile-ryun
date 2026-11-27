@@ -11,6 +11,9 @@ include: package:flutter_lints/flutter.yaml
 
 analyzer:
   exclude:
+    # Local evidence contains partial source snapshots, not application code.
+    - docs/**
+    - .worktrees/**
     - build/**
     - android/**
     - ios/**

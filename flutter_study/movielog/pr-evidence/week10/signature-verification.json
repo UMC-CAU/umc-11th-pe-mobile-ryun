@@ -1,0 +1,9 @@
+{
+  "apk_sha256": "3fcfa909af1e34e4c4993bb99a9956e76f118854a97d05dca477ece371d6aa6e",
+  "apk_bytes": 57875931,
+  "signature_verified": true,
+  "upload_certificate_matches": true,
+  "certificate_sha256": "aa4bbd9e93ae4d13bf8682b8c9f87b28bb08a16ba69b126b4acd917827386729",
+  "env_asset_present": true,
+  "tmdb_token_present_value_suppressed": true
+}
