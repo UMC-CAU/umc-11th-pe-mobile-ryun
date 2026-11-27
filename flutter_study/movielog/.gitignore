@@ -4,6 +4,15 @@
 .env.*
 !.env.example
 
+# Local signing material
+android/key.properties
+android/.week10-account.json
+*.jks
+*.keystore
+*.p8
+*.mobileprovision
+*.p12
+
 # Local study notes, screenshots, and verification logs
 /docs/
 
@@ -39,7 +48,6 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
-/android/.kotlin/
 /coverage/
 
 # Symbolication related

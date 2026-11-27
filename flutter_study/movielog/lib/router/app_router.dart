@@ -30,6 +30,9 @@ import '../profile/profile_screen.dart';
 import '../profile/my_ratings_screen.dart';
 import '../register_screen.dart';
 import '../start_screen.dart';
+import '../profile/about_screen.dart';
+import '../data/services/app_info_service.dart';
+import '../view_models/about_view_model.dart';
 
 class AppRouter {
   AppRouter._();
@@ -174,6 +177,14 @@ class AppRouter {
                 path: '/my',
                 builder: (context, state) => const ProfileScreen(),
                 routes: [
+                  GoRoute(
+                    path: 'about',
+                    parentNavigatorKey: rootNavigatorKey,
+                    builder: (_, _) => ChangeNotifierProvider(
+                      create: (_) => AboutViewModel(AppInfoService())..load(),
+                      child: const AboutScreen(),
+                    ),
+                  ),
                   GoRoute(
                     path: 'profile/edit',
                     parentNavigatorKey: rootNavigatorKey,
